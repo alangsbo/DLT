@@ -1,0 +1,33 @@
+﻿SELECT 
+s.name as schema_name,
+a.name table_name,
+b.Name as col_name,
+c.name + 
+case 
+	when c.name like '%char%' then '('+cast(case when b.max_length=-1 then 'max' else cast(b.max_length as varchar) end as varchar)+')'
+	when c.name like '%numeric%' then '('+cast(b.max_length as varchar)+',' + cast(b.precision as varchar)+ ')'
+	else ''
+end + ' ' +
+case
+	when b.is_nullable = 0 then 'NOT NULL' else 'NULL'
+end datatype,
+cast(case when pks.is_primary_key=1 then 1 else 0 end as tinyint) as pk,
+case when pks.is_primary_key=1 then b.column_id else null end as pk,
+case when b.NAME is null then 0 else 1 end AS Import 
+from
+sys.schemas s
+inner join sys.tables a on s.schema_id=a.schema_id
+inner join sys.columns b on a.object_id = b.object_id
+inner join sys.types c on b.system_type_id=c.system_type_id and b.user_type_id=c.user_type_id
+left join(
+	SELECT  i.name AS IndexName,
+		OBJECT_NAME(ic.OBJECT_ID) AS TableName,
+		COL_NAME(ic.OBJECT_ID,ic.column_id) AS ColumnName
+		,i.is_primary_key, i.object_id
+	FROM
+		sys.indexes AS i INNER JOIN 
+		sys.index_columns AS ic ON  i.OBJECT_ID = ic.OBJECT_ID AND i.index_id = ic.index_id
+	WHERE   
+		i.is_primary_key = 1
+) pks on a.object_id = pks.object_id and b.name=pks.ColumnName
+where s.name = '%SCHEMANAME%' and a.name = '%TABLENAME%'

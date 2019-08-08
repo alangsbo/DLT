@@ -1,6 +1,7 @@
 ﻿source: Server=FIHEL2SPDB023;Database=DWH_LAND;Trusted_Connection=True;
 dest: Server=FIHEL2SPDB023;Database=AL_DEV;Trusted_Connection=True;
 targetschema: dlt
+<<<<<<< HEAD
 csvfolder: \\fiHEL2spdb023\d$\DWH_DOK\csv\
 csvseparator: ,
 skipcsv: true
@@ -10,7 +11,22 @@ maxthreads:	100
 fetchtable:
 	sourceschema:	NOVA_PROD
 	sourcetable:	dbo_niAkt
+=======
+csvfolder: c:\csv\
+csvseparator: |
+skipcsv: false
+paralellexecution:	false
+maxthreads:	100
+
+fetchtable:
+	sourceschema:	dbo
+	sourcetable:	Table_1
+>>>>>>> 0ab5a7d2e436aa416f256223de09ba9d4d3c6e83
 	loadtotarget:	true
-	sharding:		true
+	sharding:		false
 	shardmethod:	rightbase10
+<<<<<<< HEAD
 	shardcolumn:	AktNr
+=======
+	shardcolumn:	salesquotakey
+>>>>>>> 0ab5a7d2e436aa416f256223de09ba9d4d3c6e83

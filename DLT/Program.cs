@@ -105,10 +105,10 @@ namespace DLT
 
                 if (line.Split(':')[0] == "fetchtable")
                 {
-                    string sourcechema = "", sourcetable = "", shardmethod = "", shardcolumn = "";
-                    bool loadtotarget = false, sharding = false;
+                    string sourcechema = "", sourcetable = "", shardmethod = "", shardcolumn = "", incrementalcolumn="", incrementalcolumntype="";
+                    bool loadtotarget = false, sharding = false, incremental = false;
                     int counter = 0;
-                    for (int j = 1; j <=6; j++)
+                    for (int j = 1; j <=9; j++)
                     {
                         if(i+j < lines.Length)
                         { 
@@ -142,6 +142,21 @@ namespace DLT
                                 shardcolumn = lines[i + j].Split(':')[1].Trim();
                                 counter++;
                             }
+                            if (lines[i + j].Split(':')[0].Trim() == "incremental")
+                            {
+                                incremental = bool.Parse(lines[i + j].Split(':')[1].Trim());
+                                counter++;
+                            }
+                            if (lines[i + j].Split(':')[0].Trim() == "incrementalcolumn")
+                            {
+                                incrementalcolumn = lines[i + j].Split(':')[1].Trim();
+                                counter++;
+                            }
+                            if (lines[i + j].Split(':')[0].Trim() == "incrementalcolumntype")
+                            {
+                                incrementalcolumntype = lines[i + j].Split(':')[1].Trim();
+                                counter++;
+                            }
                         }
 
                     }
@@ -150,10 +165,16 @@ namespace DLT
                     ft.Sharding = sharding;
                     ft.ShardMethod = shardmethod;
                     ft.ShardColumn = shardcolumn;
+                    ft.Incremental = incremental;
+                    ft.IncrementalColumn = incrementalcolumn;
+                    ft.IncrementalColumnType = incrementalcolumntype;
                     fetchTables.Add(ft);
                 }
                 
             }
+
+            // Initialie Target Data Acccess
+            TargetDataAccess.TargetConnStr = targetConnStr;
 
         }
 

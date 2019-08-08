@@ -2,7 +2,6 @@
 dest: Server=.\SQL2017;Database=DLT;Trusted_Connection=True;
 targetschema: dlt
 csvfolder: c:\csv\
-skipcsv: true
 paralellexecution:	true
 maxthreads:	100
 
@@ -21,6 +20,9 @@ fetchtable:
 	sharding:		true
 	shardmethod:	rightbase10
 	shardcolumn:	financekey
+	incremental:	true
+	incrementalcolumn:	Date
+	incrementalcolumntype:	date
 
 fetchtable:
 	sourceschema:	dbo

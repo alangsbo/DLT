@@ -24,6 +24,7 @@ namespace DLT
     {
         static string sourceConnStr = "";
         static string targetConnStr = "";
+        static string csvSeparator = "";
         static List<FetchTables> fetchTables = new List<FetchTables>();
         static bool skipCsv = false;
         static string sqlServerMetadataFetchTemplate = "";
@@ -90,6 +91,8 @@ namespace DLT
                     targetConnStr = line.Split(':')[1].Trim();
                 if (line.Split(':')[0] == "targetschema")
                     targetSchema = line.Split(':')[1].Trim();
+                if (line.Split(':')[0] == "csvseparator")
+                    csvSeparator = line.Split(':')[1].Trim();
                 if (line.Split(':')[0] == "paralellexecution")
                     paralellExection = bool.Parse(line.Split(':')[1].Trim());
                 if (line.Split(':')[0] == "skipcsv")
@@ -225,7 +228,7 @@ namespace DLT
                         val = o.ToString();
 
                     if (counter++ != output.Length - 1)
-                        val += ",";
+                        val += csvSeparator;
 
                     row += val;
                 }

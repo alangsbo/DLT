@@ -22,6 +22,23 @@ namespace DLT
         public bool Incremental = false;
         public string IncrementalColumn = "";
         public string IncrementalColumnType = "";
+        public static int NumShardsInsertedSuccessfully = 0;
+
+        public bool AllShardsBulkInsertedSuccessfully
+        {
+            get
+            {
+                return NumShardsInsertedSuccessfully == this.Shards.Count;
+                //bool succ = true;
+                //foreach(Shard s in this.Shards)
+                //{
+                //    if (!s.BulkInsertedSuccessfully)
+                //        succ = false;
+                //}
+
+                //return succ;
+            }
+        }
 
 
         public FetchTables(string SourceSchema, string SourceTable, bool LoadToTarget)

@@ -11,11 +11,12 @@ namespace DLT
     {
         public static string TargetConnStr = "";
 
-        public static void ExecSqlNonQuery(string sql)
+        public static bool ExecSqlNonQuery(string sql)
         {
             SqlConnection conn = new SqlConnection(TargetConnStr);
             SqlCommand cmd = conn.CreateCommand();
             cmd.CommandText = sql;
+            cmd.CommandTimeout = 0;
             try
             {
                 conn.Open();
@@ -26,7 +27,10 @@ namespace DLT
             {
                 Console.WriteLine(ex.Message);
                 Console.WriteLine(sql);
+                return false;
             }
+
+            return true;
         }
 
         public static object GetSingleValue(string sql)

@@ -35,16 +35,26 @@ namespace DLT
 
             // 2. Bulk insert data to temp table
             Parallel.ForEach(ft.Shards, new ParallelOptions { MaxDegreeOfParallelism = MaxThreads/10 }, (shard) =>
+            //foreach(Shard shard in ft.Shards)
             {
                 Console.WriteLine($"Bulk inserting {shard.Name} on thread {Thread.CurrentThread.ManagedThreadId}");
-                BulkInsert(shard, ft.Incremental);
-            });
+                if(BulkInsert(shard, ft.Incremental))
+                {
+                    FetchTables.NumShardsInsertedSuccessfully++;
+                }
+            }
+            );
 
-           if (!ft.Incremental) {
-                // 3. Drop existsing table
-                TargetDataAccess.ExecSqlNonQuery(ft.DropTableSql);
-                // 4. Rename temp table
-                TargetDataAccess.ExecSqlNonQuery(ft.SwitchTableSql);
+            if (!ft.Incremental)
+            {
+                // if all shards where inserted successfully
+                if (ft.AllShardsBulkInsertedSuccessfully)
+                {
+                    // 3. Drop existsing table
+                    TargetDataAccess.ExecSqlNonQuery(ft.DropTableSql);
+                    // 4. Rename temp table
+                    TargetDataAccess.ExecSqlNonQuery(ft.SwitchTableSql);
+                }
             }
         }
 
@@ -81,7 +91,7 @@ namespace DLT
         //    DataAccess.ExecSqlNonQuery("EXEC sp_rename '" + targetSchema + "." + ft.SourceSchema + "_" + ft.SourceTable + "_tmp', '" + ft.SourceSchema + "_" + ft.SourceTable + "';", connStr);
         //}
 
-        void BulkInsert(Shard shard, bool Incremental)
+        bool BulkInsert(Shard shard, bool Incremental)
         {
 
             //string truncatesql = "TRUNCATE TABLE " + targetSchema + "." + sourceSchema + "_" + sourceTable;
@@ -91,13 +101,13 @@ namespace DLT
             string bulkinsertsql = "bulk insert " + targetSchema + "." + shard.TableName + (Incremental?" ": "_tmp ") +
                                     "from '" + csvFolder + shard.Name + ".csv' " +
                                     "with( " +
-                                     //"   format = 'csv', " +
+                                     "   format = 'csv', " +
                                      "   fieldterminator='" + csvSeparator + "'," +
                                      "   firstrow = 2, " +
                                      "   fieldquote = '\"', " +
                                      "   codepage = '65001' " +
                                     ")";
-            TargetDataAccess.ExecSqlNonQuery(bulkinsertsql);
+            return TargetDataAccess.ExecSqlNonQuery(bulkinsertsql);
 
         }
 

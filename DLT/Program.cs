@@ -65,15 +65,20 @@ namespace DLT
                         SaveTableAsCsv(f);
                     }
                 }
-                Log.CsvEndTime = DateTime.Now.AddSeconds(1);
-                Console.WriteLine(Log.CsvBytesWritten / 1000000 + " MB loaded in " + (Log.CsvEndTime - Log.CsvStartTime).Seconds + " seconds - " + (Log.CsvBytesWritten / 1000000) / (Log.CsvEndTime - Log.CsvStartTime).Seconds + " MB/s, " + ((Log.CsvBytesWritten / 1000000) / (Log.CsvEndTime - Log.CsvStartTime).Seconds) * 8 + " MBPS");
+                Log.CsvEndTime = DateTime.Now;
+                try
+                {
+                    Console.WriteLine("Csv Load started: " + Log.CsvStartTime.ToLongTimeString());
+                    Console.WriteLine("Csv Load started: " + Log.CsvEndTime.ToLongTimeString());
+                    Console.WriteLine(Log.CsvBytesWritten / 1000000 + " MB loaded in " + (Log.CsvEndTime - Log.CsvStartTime).Seconds + " seconds - " + (Log.CsvBytesWritten / 1000000) / (Log.CsvEndTime - Log.CsvStartTime).Seconds + " MB/s, " + ((Log.CsvBytesWritten / 1000000) / (Log.CsvEndTime - Log.CsvStartTime).TotalSeconds) * 8 + " MBPS");
+                }catch(Exception ex) { }
             }
 
             Target t = new Target(targetConnStr, targetSchema, csvFolder, csvSeparator, fetchTables);
             t.LoadTablesToTarget(paralellExection, maxThreads);
 
             Console.WriteLine("Done...");
-            Console.ReadLine();
+            //Console.ReadLine();
         }
 
         static void LoadConfig()
@@ -220,15 +225,15 @@ namespace DLT
                         val = "\"" + o.ToString().Replace("\"", "\"\"") + "\"";
 
                     else if (o.GetType() == typeof(bool))
-                        val = (bool.Parse(o.ToString()) == false ? 0 : 1).ToString();
+                        val = "\"" +  (bool.Parse(o.ToString()) == false ? 0 : 1).ToString() + "\"";
 
                     else if (reader.GetDataTypeName(counter) == "decimal")
-                        val = o.ToString().Replace(",", ".");
+                        val = "\"" + o.ToString().Replace(",", ".") + "\"";
 
                     else if (o.GetType() == typeof(byte[]))
-                        val = "";
+                        val = "\"\"";
                     else
-                        val = o.ToString();
+                        val = "\"" + o.ToString() + "\"";
 
                     if (counter++ != output.Length - 1)
                         val += csvSeparator;

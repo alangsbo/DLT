@@ -1,16 +1,65 @@
-﻿source: Server=FIHEL2SPDB023;Database=DWH_LAND;Trusted_Connection=True;
-dest: Server=FIHEL2SPDB023;Database=AL_DEV;Trusted_Connection=True;
+﻿source: Server=.\SQL2017;Database=AdventureWorksDW2017;Trusted_Connection=True;
+dest: Server=.\SQL2017;Database=DLT;Trusted_Connection=True;
 targetschema: dlt
-csvfolder: \\fiHEL2spdb023\d$\DWH_DOK\csv\
-skipcsv: true
+csvfolder: c:\csv\
+csvseparator: |
 paralellexecution:	true
-csvseparator:	|
 maxthreads:	100
 
 fetchtable:
-	sourceschema:	NOVA_PROD
-	sourcetable:	dbo_NiAkt
+	sourceschema:	dbo
+	sourcetable:	FactSalesQuota
 	loadtotarget:	true
 	sharding:		true
 	shardmethod:	rightbase10
-	shardcolumn:	AktNr
+	shardcolumn:	salesquotakey
+
+fetchtable:
+	sourceschema:	dbo
+	sourcetable:	FactFinance
+	loadtotarget:	true
+	sharding:		true
+	shardmethod:	rightbase10
+	shardcolumn:	financekey
+	incremental:	true
+	incrementalcolumn:	Date
+	incrementalcolumntype:	date
+
+fetchtable:
+	sourceschema:	dbo
+	sourcetable:	FactProductInventory
+	loadtotarget:	true
+	sharding:		true
+	shardmethod:	rightbase10
+	shardcolumn:	productkey
+
+fetchtable:
+	sourceschema:	dbo
+	sourcetable:	FactResellerSales
+	loadtotarget:	true
+	sharding:		true
+	shardmethod:	rightbase10
+	shardcolumn:	productkey
+
+fetchtable:
+	sourceschema:	dbo
+	sourcetable:	FactInternetSales
+	loadtotarget:	true
+	sharding:		true
+	shardmethod:	rightbase10
+	shardcolumn:	salesordernumber
+
+fetchtable:
+	sourceschema:	dbo
+	sourcetable:	DimProduct
+	loadtotarget:	true
+
+fetchtable:
+	sourceschema:	dbo
+	sourcetable:	DimAccount
+	loadtotarget:	true
+
+fetchtable:
+	sourceschema:	dbo
+	sourcetable:	DimOrganization
+	loadtotarget:	true

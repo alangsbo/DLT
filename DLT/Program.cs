@@ -69,7 +69,7 @@ namespace DLT
                 Console.WriteLine(Log.CsvBytesWritten / 1000000 + " MB loaded in " + (Log.CsvEndTime - Log.CsvStartTime).Seconds + " seconds - " + (Log.CsvBytesWritten / 1000000) / (Log.CsvEndTime - Log.CsvStartTime).Seconds + " MB/s, " + ((Log.CsvBytesWritten / 1000000) / (Log.CsvEndTime - Log.CsvStartTime).Seconds) * 8 + " MBPS");
             }
 
-            Target t = new Target(targetConnStr, targetSchema, csvFolder, fetchTables);
+            Target t = new Target(targetConnStr, targetSchema, csvFolder, csvSeparator, fetchTables);
             t.LoadTablesToTarget(paralellExection, maxThreads);
 
             Console.WriteLine("Done...");

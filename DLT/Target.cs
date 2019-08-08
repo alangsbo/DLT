@@ -12,14 +12,16 @@ namespace DLT
         string connStr = "";
         string targetSchema = "";
         string csvFolder = "";
+        string csvSeparator = "";
         List<FetchTables> fetchTables;
 
-        public Target(string TargetConnectionString, string TargetSchema, string CsvFolder, List<FetchTables> FetchTables)
+        public Target(string TargetConnectionString, string TargetSchema, string CsvFolder, string CsvSeparator, List<FetchTables> FetchTables)
         {
             this.connStr = TargetConnectionString;
             this.targetSchema = TargetSchema;
             this.csvFolder = CsvFolder;
             this.fetchTables = FetchTables;
+            this.csvSeparator = CsvSeparator;
         }
 
         void BulkInsert(FetchTables ft, bool ParallelExecution, int MaxThreads)
@@ -89,7 +91,8 @@ namespace DLT
             string bulkinsertsql = "bulk insert " + targetSchema + "." + shard.TableName + (Incremental?" ": "_tmp ") +
                                     "from '" + csvFolder + shard.Name + ".csv' " +
                                     "with( " +
-                                     "   format = 'csv', " +
+                                     //"   format = 'csv', " +
+                                     "   fieldterminator='" + csvSeparator + "'," +
                                      "   firstrow = 2, " +
                                      "   fieldquote = '\"', " +
                                      "   codepage = '65001' " +

@@ -1,3 +1,4 @@
 DLT/bin
 DLT/obj
 .vs
+*config*.txt

@@ -2,6 +2,7 @@
 dest: Server=.\SQL2017;Database=DLT;Trusted_Connection=True;
 targetschema: dlt
 csvfolder: c:\csv\
+skipcsv: true
 paralellexecution:	true
 maxthreads:	100
 

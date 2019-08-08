@@ -7,7 +7,7 @@ using System.Data.SqlClient;
 using System.IO;
 using System.Data;
 
-namespace DET
+namespace DLT
 {
     public static class Log
     {
@@ -16,76 +16,16 @@ namespace DET
         public static DateTime CsvEndTime;
     }
 
-    public class Shard
-    {
-        public string Sql;
-        public string Name;
-        public string TableName;
-        public Shard(string Sql, string Name, string TableName)
-        {
-            this.Sql = Sql;
-            this.Name = Name;
-            this.TableName = TableName;
-        }
-    }
+    
 
-    class FetchTables
-    {
-        
-        public string SourceSchema;
-        public string SourceTable;
-        public bool LoadToTarget =false;
-        public bool Sharding = false;
-        public string ShardMethod="";
-        public string ShardColumn = "";
+    
 
-        public FetchTables(string SourceSchema, string SourceTable, bool LoadToTarget)
-        {
-            this.SourceSchema = SourceSchema;
-            this.SourceTable = SourceTable;
-            this.LoadToTarget = LoadToTarget;
-        }
-
-        public FetchTables(string SourceSchema, string SourceTable)
-        {
-            this.SourceSchema = SourceSchema;
-            this.SourceTable = SourceTable;
-        }
-
-        public List<Shard> Shards
-        {
-            get
-            { 
-                // Return sql statement / statements (if sharding)
-                List<Shard> shards = new List<Shard>();
-
-                if (this.Sharding)
-                {
-                    switch (this.ShardMethod)
-                    {
-                        case "rightbase10":
-                            for (int i = 0; i < 10; i++)
-                            {
-                                Shard s = new Shard("SELECT * FROM " + this.SourceSchema + "." + this.SourceTable + " WHERE RIGHT(CAST(" + this.ShardColumn + " as VARCHAR), 1) ='" + i.ToString() + "'", this.SourceSchema + "_" + this.SourceTable + "_" + i.ToString(), this.SourceSchema + "_" + this.SourceTable);
-                                shards.Add(s);
-                            }
-                        break;
-                    }
-                }else
-                {
-                    shards.Add(new Shard("SELECT * FROM " + this.SourceSchema + "." + this.SourceTable, this.SourceSchema + "_" + this.SourceTable, this.SourceSchema + "_" + this.SourceTable));
-                }
-
-                return shards;
-            }
-        }
-    }
-
-    class Program
+    public class Program
     {
         static string sourceConnStr = "";
         static string targetConnStr = "";
         static List<FetchTables> fetchTables = new List<FetchTables>();
+        static bool skipCsv = false;
         static string sqlServerMetadataFetchTemplate = "";
         static string targetSchema = "";
         static bool paralellExection = false;
@@ -96,53 +36,41 @@ namespace DET
         static void Main(string[] args)
         {
             LoadConfig();
+            GetCreateTableSql(fetchTables);
 
-            Log.CsvStartTime = DateTime.Now;
-            if (paralellExection)
-            {
-                List<Shard> allShards = new List<Shard>();
-                foreach(FetchTables f in fetchTables)
+            if (!skipCsv)
+            { 
+                Log.CsvStartTime = DateTime.Now;
+                if (paralellExection)
                 {
-                    foreach(Shard s in f.Shards)
+                    List<Shard> allShards = new List<Shard>();
+                    foreach(FetchTables f in fetchTables)
                     {
-                        allShards.Add(s);
+                        foreach(Shard s in f.Shards)
+                        {
+                            allShards.Add(s);
+                        }
+                    }
+
+                    Parallel.ForEach(allShards, new ParallelOptions { MaxDegreeOfParallelism = maxThreads }, (shard) =>
+                    {
+                        SaveCsv(shard, sourceConnStr);
+                    });
+                }
+                else
+                {
+                    foreach (FetchTables f in fetchTables)
+                    {
+                        SaveTableAsCsv(f);
                     }
                 }
-
-                Parallel.ForEach(allShards, new ParallelOptions { MaxDegreeOfParallelism = maxThreads }, (shard) =>
-                {
-                    SaveCsv(shard, sourceConnStr);
-                });
-            }
-            else
-            {
-                foreach (FetchTables f in fetchTables)
-                {
-                    SaveTableAsCsv(f);
-                }
-            }
-            Log.CsvEndTime = DateTime.Now;
-
-
-            if (paralellExection)
-            {
-                
-                Parallel.ForEach(fetchTables, new ParallelOptions { MaxDegreeOfParallelism = maxThreads }, (ft) =>
-                {
-                    Console.WriteLine($"Bulk inserting {ft.SourceTable} on thread {Thread.CurrentThread.ManagedThreadId}");
-                    BulkInsert(ft);
-                });
-            }
-            else
-            {
-                foreach (FetchTables f in fetchTables)
-                {
-                    BulkInsert(f); ;
-                }
+                Log.CsvEndTime = DateTime.Now;
+                Console.WriteLine(Log.CsvBytesWritten / 1000000 + " MB loaded in " + (Log.CsvEndTime - Log.CsvStartTime).Seconds + " seconds - " + (Log.CsvBytesWritten / 1000000) / (Log.CsvEndTime - Log.CsvStartTime).Seconds + " MB/s, " + ((Log.CsvBytesWritten / 1000000) / (Log.CsvEndTime - Log.CsvStartTime).Seconds) * 8 + " MBPS");
             }
 
+            Target t = new Target(targetConnStr, targetSchema, csvFolder, fetchTables);
+            t.LoadTablesToTarget(paralellExection, maxThreads);
 
-            Console.WriteLine(Log.CsvBytesWritten / 1000000 + " MB loaded in " + (Log.CsvEndTime - Log.CsvStartTime).Seconds + " seconds - " + (Log.CsvBytesWritten / 1000000)/ (Log.CsvEndTime - Log.CsvStartTime).Seconds + " MB/s, " + ((Log.CsvBytesWritten / 1000000) / (Log.CsvEndTime - Log.CsvStartTime).Seconds)*8 + " MBPS");
             Console.WriteLine("Done...");
             Console.ReadLine();
         }
@@ -150,9 +78,7 @@ namespace DET
         static void LoadConfig()
         {
             sqlServerMetadataFetchTemplate = File.ReadAllText("SqlServerMetaDataFetchTemplate.txt");
-
-            //IEnumerable<string> conns
-            //StreamReader rdr = new StreamReader(("Config.txt"));
+;
             string[] lines = File.ReadAllLines("Config.txt");
 
             for(int i=0;i<lines.Length;i++)
@@ -166,6 +92,8 @@ namespace DET
                     targetSchema = line.Split(':')[1].Trim();
                 if (line.Split(':')[0] == "paralellexecution")
                     paralellExection = bool.Parse(line.Split(':')[1].Trim());
+                if (line.Split(':')[0] == "skipcsv")
+                    skipCsv = bool.Parse(line.Split(':')[1].Trim());
                 if (line.Split(':')[0] == "maxthreads")
                     maxThreads = int.Parse(line.Split(':')[1].Trim());
                 if (line.Split(": ".ToCharArray())[0].ToString() == "csvfolder")
@@ -229,15 +157,6 @@ namespace DET
 
         }
 
-        static void ParallelMethod(string str)
-        {
-
-            int sleeptime = (new Random(DateTime.Now.Millisecond)).Next(1000, 10000);
-            Console.WriteLine(str + " sleeping " + sleeptime + " seconds");
-            Thread.Sleep(sleeptime);
-            Console.WriteLine(str + " done");
-        }
-
         static void SaveTableAsCsv(FetchTables TableToFetch)
         {
             foreach(Shard shard in TableToFetch.Shards)
@@ -299,54 +218,17 @@ namespace DET
             sqlCon.Close();
         }
 
-
-        static void BulkInsert(FetchTables ft)
+        static void GetCreateTableSql(List<FetchTables> ft)
         {
-            // create temp table
-            CreateTableFromSource(ft.SourceSchema, ft.SourceTable, true, true);
-            Parallel.ForEach(ft.Shards, new ParallelOptions { MaxDegreeOfParallelism = maxThreads }, (shard) =>
+            foreach(FetchTables fetchTable in ft)
             {
-                Console.WriteLine($"Bulk inserting {shard.Name} on thread {Thread.CurrentThread.ManagedThreadId}");
-                BulkInsert(shard);
-            });
-
-            SwitchTable(ft);
-
-
-        }
-
-        static void SwitchTable(FetchTables ft)
-        {
-            try
-            {
-                // ExecSqlNonQuery("EXEC sp_rename '" + targetSchema + "." + ft.SourceSchema + "_" + ft.SourceTable + "', '" + ft.SourceSchema + "_" + ft.SourceTable + "_old';", targetConnStr);
-                string deleteSql = "IF OBJECT_ID('" + targetSchema + "." + ft.SourceSchema + "_" + ft.SourceTable + "', 'U') IS NOT NULL   DROP TABLE " + targetSchema + "." + ft.SourceSchema + "_" + ft.SourceTable + ";";
-                ExecSqlNonQuery(deleteSql, targetConnStr);
+                fetchTable.CreateTableSql = GetCreateTableSql(fetchTable.SourceSchema, fetchTable.SourceTable, false);
+                fetchTable.CreateTempTableSql = GetCreateTableSql(fetchTable.SourceSchema, fetchTable.SourceTable, true);
+                fetchTable.DropTableSql = "IF OBJECT_ID('" + targetSchema + "." + fetchTable.SourceSchema + "_" + fetchTable.SourceTable + "', 'U') IS NOT NULL   DROP TABLE " + targetSchema + "." + fetchTable.SourceSchema + "_" + fetchTable.SourceTable + ";";
+                fetchTable.SwitchTableSql = "EXEC sp_rename '" + targetSchema + "." + fetchTable.SourceSchema + "_" + fetchTable.SourceTable + "_tmp', '" + fetchTable.SourceSchema + "_" + fetchTable.SourceTable + "';";
             }
-            catch (Exception ex)
-            { }
-            ExecSqlNonQuery("EXEC sp_rename '"+ targetSchema + "." + ft.SourceSchema + "_" + ft.SourceTable + "_tmp', '" + ft.SourceSchema + "_" + ft.SourceTable + "';", targetConnStr);
         }
-
-        static void BulkInsert(Shard shard)
-        {
-
-            //string truncatesql = "TRUNCATE TABLE " + targetSchema + "." + sourceSchema + "_" + sourceTable;
-
-            //ExecSqlNonQuery(truncatesql, targetConnStr);
-
-            string bulkinsertsql = "bulk insert " + targetSchema + "." + shard.TableName + "_tmp " +
-                                    "from '"+csvFolder+shard.Name + ".csv' " +
-                                    "with( " +
-                                     "   format = 'csv', " +
-                                     "   firstrow = 2, " +
-                                     "   fieldquote = '\"', " +
-                                     "   codepage = '65001' " +
-                                    ")";
-            ExecSqlNonQuery(bulkinsertsql, targetConnStr);
-            
-        }
-
+        
         static DataSet GetTableMetaData(string schema, string TableName)
         {
             string fetchMetadataSql = sqlServerMetadataFetchTemplate.Replace("%SCHEMANAME%", schema).Replace("%TABLENAME%", TableName);
@@ -376,34 +258,6 @@ namespace DET
             return sql;
         }
 
-        static void CreateTableFromSource(string sourceSchema, string sourceTable, bool replaceTableIfExists, bool tempTable)
-        {
-            if(!tempTable)
-            {
-                if (replaceTableIfExists)
-                {
-                    string deleteSql = "IF OBJECT_ID('" + targetSchema + "." + sourceSchema + "_" + sourceTable + "', 'U') IS NOT NULL   DROP TABLE " + targetSchema + "." + sourceSchema + "_" + sourceTable + ";";
-                    ExecSqlNonQuery(deleteSql, targetConnStr);
-                }
-                Console.WriteLine("Creating table " + targetSchema + "." + sourceSchema + "_" + sourceTable);
-
-                string sql = GetCreateTableSql(sourceSchema, sourceTable, false);
-                Console.WriteLine(sql);
-                ExecSqlNonQuery(sql, targetConnStr);
-            }
-            else
-            {
-                string deleteSql = "IF OBJECT_ID('" + targetSchema + "." + sourceSchema + "_" + sourceTable + "_tmp', 'U') IS NOT NULL   DROP TABLE " + targetSchema + "." + sourceSchema + "_" + sourceTable + ";";
-                ExecSqlNonQuery(deleteSql, targetConnStr);
-                Console.WriteLine("Creating temp table " + targetSchema + "." + sourceSchema + "_" + sourceTable+"_tmp");
-
-                string sql = GetCreateTableSql(sourceSchema, sourceTable, true);
-                Console.WriteLine(sql);
-                ExecSqlNonQuery(sql, targetConnStr);
-            }
-            
-        }
-
         static public DataSet GetDataSet(string ConnectionString, string SQL)
         {
             SqlConnection conn = new SqlConnection(ConnectionString);
@@ -425,25 +279,7 @@ namespace DET
 
             return ds;
         }
-
-        static void ExecSqlNonQuery(string sql, string connStr)
-        {
-            SqlConnection conn = new SqlConnection(connStr);
-            SqlCommand cmd = conn.CreateCommand();
-            cmd.CommandText = sql;
-            try
-            {
-                conn.Open();
-                cmd.ExecuteNonQuery();
-                conn.Close();
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine(ex.Message);
-                Console.WriteLine(sql);
-            }
-        }
-
+       
         static string ConvertToCSV(DataSet objDataSet)
         {
             StringBuilder content = new StringBuilder();

@@ -3,63 +3,14 @@ dest: Server=.\SQL2017;Database=DLT;Trusted_Connection=True;
 targetschema: dlt
 csvfolder: c:\csv\
 csvseparator: |
-paralellexecution:	true
+skipcsv: false
+paralellexecution:	false
 maxthreads:	100
 
 fetchtable:
 	sourceschema:	dbo
-	sourcetable:	FactSalesQuota
+	sourcetable:	Table_1
 	loadtotarget:	true
-	sharding:		true
+	sharding:		false
 	shardmethod:	rightbase10
 	shardcolumn:	salesquotakey
-
-fetchtable:
-	sourceschema:	dbo
-	sourcetable:	FactFinance
-	loadtotarget:	true
-	sharding:		true
-	shardmethod:	rightbase10
-	shardcolumn:	financekey
-	incremental:	true
-	incrementalcolumn:	Date
-	incrementalcolumntype:	date
-
-fetchtable:
-	sourceschema:	dbo
-	sourcetable:	FactProductInventory
-	loadtotarget:	true
-	sharding:		true
-	shardmethod:	rightbase10
-	shardcolumn:	productkey
-
-fetchtable:
-	sourceschema:	dbo
-	sourcetable:	FactResellerSales
-	loadtotarget:	true
-	sharding:		true
-	shardmethod:	rightbase10
-	shardcolumn:	productkey
-
-fetchtable:
-	sourceschema:	dbo
-	sourcetable:	FactInternetSales
-	loadtotarget:	true
-	sharding:		true
-	shardmethod:	rightbase10
-	shardcolumn:	salesordernumber
-
-fetchtable:
-	sourceschema:	dbo
-	sourcetable:	DimProduct
-	loadtotarget:	true
-
-fetchtable:
-	sourceschema:	dbo
-	sourcetable:	DimAccount
-	loadtotarget:	true
-
-fetchtable:
-	sourceschema:	dbo
-	sourcetable:	DimOrganization
-	loadtotarget:	true

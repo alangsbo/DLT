@@ -66,7 +66,7 @@ namespace DLT
                     }
                 }
                 Log.CsvEndTime = DateTime.Now;
-                Console.WriteLine(Log.CsvBytesWritten / 1000000 + " MB loaded in " + (Log.CsvEndTime - Log.CsvStartTime).Seconds + " seconds - " + (Log.CsvBytesWritten / 1000000) / (Log.CsvEndTime - Log.CsvStartTime).Seconds + " MB/s, " + ((Log.CsvBytesWritten / 1000000) / (Log.CsvEndTime - Log.CsvStartTime).Seconds) * 8 + " MBPS");
+                //Console.WriteLine(Log.CsvBytesWritten / 1000000 + " MB loaded in " + (Log.CsvEndTime - Log.CsvStartTime).Seconds + " seconds - " + (Log.CsvBytesWritten / 1000000) / (Log.CsvEndTime - Log.CsvStartTime).Seconds + " MB/s, " + ((Log.CsvBytesWritten / 1000000) / (Log.CsvEndTime - Log.CsvStartTime).Seconds) * 8 + " MBPS");
             }
 
             Target t = new Target(targetConnStr, targetSchema, csvFolder, csvSeparator, fetchTables);
@@ -221,6 +221,9 @@ namespace DLT
 
                     else if (o.GetType() == typeof(bool))
                         val = (bool.Parse(o.ToString()) == false ? 0 : 1).ToString();
+
+                    else if (o.GetType() == typeof(decimal))
+                        val = o.ToString().Replace(",", ".");
 
                     else if (o.GetType() == typeof(byte[]))
                         val = "";

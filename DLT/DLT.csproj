@@ -42,6 +42,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="SqlServerSource.cs" />
     <Compile Include="TargetDataAccess.cs" />
     <Compile Include="FetchTables.cs" />
     <Compile Include="Program.cs" />
@@ -56,6 +57,7 @@
     <Content Include="Config.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
+    <Content Include="OracleMetadataFetchTemplate.txt" />
     <Content Include="SqlServerMetaDataFetchTemplate.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>

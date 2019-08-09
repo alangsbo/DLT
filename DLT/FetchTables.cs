@@ -69,7 +69,7 @@ namespace DLT
                     object maxValueInTarget = TargetDataAccess.GetSingleValue(incrSql);
 
                     // If no object is returned, table is probably empty, 
-                    if (maxValueInTarget.ToString() == "")
+                    if(maxValueInTarget == null || maxValueInTarget.ToString() == "")
                     {
                         incrWhere = "1=1";
                     }
@@ -87,7 +87,7 @@ namespace DLT
                         case "rightbase10":
                             for (int i = 0; i < 10; i++)
                             {
-                                Shard s = new Shard("SELECT * FROM " + this.SourceSchema + "." + this.SourceTable + " WHERE RIGHT(CAST(" + this.ShardColumn + " as VARCHAR), 1) ='" + i.ToString() + "'" + (this.Incremental?" AND "+incrWhere:""), this.SourceSchema + "_" + this.SourceTable + "_" + i.ToString(), this.SourceSchema + "_" + this.SourceTable);
+                                Shard s = new Shard("SELECT top 100 * FROM " + this.SourceSchema + "." + this.SourceTable + " WHERE RIGHT(CAST(" + this.ShardColumn + " as VARCHAR), 1) ='" + i.ToString() + "'" + (this.Incremental?" AND "+incrWhere:""), this.SourceSchema + "_" + this.SourceTable + "_" + i.ToString(), this.SourceSchema + "_" + this.SourceTable);
                                 shards.Add(s);
                             }
                             break;
@@ -95,7 +95,7 @@ namespace DLT
                 }
                 else
                 {
-                    shards.Add(new Shard("SELECT * FROM " + this.SourceSchema + "." + this.SourceTable, this.SourceSchema + "_" + this.SourceTable, this.SourceSchema + "_" + this.SourceTable + (this.Incremental ? " WHERE " + incrWhere : "")));
+                    shards.Add(new Shard("SELECT top 100 * FROM " + this.SourceSchema + "." + this.SourceTable, this.SourceSchema + "_" + this.SourceTable, this.SourceSchema + "_" + this.SourceTable + (this.Incremental ? " WHERE " + incrWhere : "")));
                 }
 
                 return shards;

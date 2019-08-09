@@ -25,9 +25,9 @@ namespace DLT
         static string sourceConnStr = "";
         static string targetConnStr = "";
         static string csvSeparator = "";
-        static List<FetchTables> fetchTables = new List<FetchTables>();
+       // static List<FetchTables> fetchTables = new List<FetchTables>();
         static bool skipCsv = false;
-        static string sqlServerMetadataFetchTemplate = "";
+        //static string sqlServerMetadataFetchTemplate = "";
         static string targetSchema = "";
         static bool paralellExection = false;
         static int maxThreads = -1;
@@ -36,18 +36,22 @@ namespace DLT
 
         static void Main(string[] args)
         {
+
             LoadConfig();
-            GetCreateTableSql(fetchTables);
+            List<FetchTables> ft = (new SqlServerSource(sourceConnStr)).LoadTablesFromConfig();
+
+     
+            //GetCreateTableSql(fetchTables);
 
             if (!skipCsv)
-            { 
+            {
                 Log.CsvStartTime = DateTime.Now;
                 if (paralellExection)
                 {
                     List<Shard> allShards = new List<Shard>();
-                    foreach(FetchTables f in fetchTables)
+                    foreach (FetchTables f in ft)
                     {
-                        foreach(Shard s in f.Shards)
+                        foreach (Shard s in f.Shards)
                         {
                             allShards.Add(s);
                         }
@@ -60,7 +64,7 @@ namespace DLT
                 }
                 else
                 {
-                    foreach (FetchTables f in fetchTables)
+                    foreach (FetchTables f in ft)
                     {
                         SaveTableAsCsv(f);
                     }
@@ -71,19 +75,20 @@ namespace DLT
                     Console.WriteLine("Csv Load started: " + Log.CsvStartTime.ToLongTimeString());
                     Console.WriteLine("Csv Load started: " + Log.CsvEndTime.ToLongTimeString());
                     Console.WriteLine(Log.CsvBytesWritten / 1000000 + " MB loaded in " + (Log.CsvEndTime - Log.CsvStartTime).Seconds + " seconds - " + (Log.CsvBytesWritten / 1000000) / (Log.CsvEndTime - Log.CsvStartTime).Seconds + " MB/s, " + ((Log.CsvBytesWritten / 1000000) / (Log.CsvEndTime - Log.CsvStartTime).TotalSeconds) * 8 + " MBPS");
-                }catch(Exception ex) { }
+                }
+                catch (Exception ex) { }
             }
 
-            Target t = new Target(targetConnStr, targetSchema, csvFolder, csvSeparator, fetchTables);
+            Target t = new Target(targetConnStr, targetSchema, csvFolder, csvSeparator, ft);
             t.LoadTablesToTarget(paralellExection, maxThreads);
 
             Console.WriteLine("Done...");
-            //Console.ReadLine();
+            Console.ReadLine();
         }
 
         static void LoadConfig()
         {
-            sqlServerMetadataFetchTemplate = File.ReadAllText("SqlServerMetaDataFetchTemplate.txt");
+            //sqlServerMetadataFetchTemplate = File.ReadAllText("SqlServerMetaDataFetchTemplate.txt");
 ;
             string[] lines = File.ReadAllLines("Config.txt");
 
@@ -111,73 +116,73 @@ namespace DLT
                         csvFolder += "\\";
                 }
 
-                if (line.Split(':')[0] == "fetchtable")
-                {
-                    string sourcechema = "", sourcetable = "", shardmethod = "", shardcolumn = "", incrementalcolumn="", incrementalcolumntype="";
-                    bool loadtotarget = false, sharding = false, incremental = false;
-                    int counter = 0;
-                    for (int j = 1; j <=9; j++)
-                    {
-                        if(i+j < lines.Length)
-                        { 
+                //if (line.Split(':')[0] == "fetchtable")
+                //{
+                //    string sourcechema = "", sourcetable = "", shardmethod = "", shardcolumn = "", incrementalcolumn="", incrementalcolumntype="";
+                //    bool loadtotarget = false, sharding = false, incremental = false;
+                //    int counter = 0;
+                //    for (int j = 1; j <=9; j++)
+                //    {
+                //        if(i+j < lines.Length)
+                //        { 
                         
-                            if (lines[i+j].Split(':')[0].Trim() == "sourceschema") {
-                                sourcechema = lines[i + j].Split(':')[1].Trim();
-                                counter++;
-                            }
-                            if (lines[i + j].Split(':')[0].Trim() == "sourcetable")
-                            {
-                                sourcetable = lines[i + j].Split(':')[1].Trim();
-                                counter++;
-                            }
-                            if (lines[i + j].Split(':')[0].Trim() == "loadtotarget")
-                            {
-                                loadtotarget = bool.Parse(lines[i + j].Split(':')[1].Trim());
-                                counter++;
-                            }
-                            if (lines[i + j].Split(':')[0].Trim() == "sharding")
-                            {
-                                sharding = bool.Parse(lines[i + j].Split(':')[1].Trim());
-                                counter++;
-                            }
-                            if (lines[i + j].Split(':')[0].Trim() == "shardmethod")
-                            {
-                                shardmethod = lines[i + j].Split(':')[1].Trim();
-                                counter++;
-                            }
-                            if (lines[i + j].Split(':')[0].Trim() == "shardcolumn")
-                            {
-                                shardcolumn = lines[i + j].Split(':')[1].Trim();
-                                counter++;
-                            }
-                            if (lines[i + j].Split(':')[0].Trim() == "incremental")
-                            {
-                                incremental = bool.Parse(lines[i + j].Split(':')[1].Trim());
-                                counter++;
-                            }
-                            if (lines[i + j].Split(':')[0].Trim() == "incrementalcolumn")
-                            {
-                                incrementalcolumn = lines[i + j].Split(':')[1].Trim();
-                                counter++;
-                            }
-                            if (lines[i + j].Split(':')[0].Trim() == "incrementalcolumntype")
-                            {
-                                incrementalcolumntype = lines[i + j].Split(':')[1].Trim();
-                                counter++;
-                            }
-                        }
+                //            if (lines[i+j].Split(':')[0].Trim() == "sourceschema") {
+                //                sourcechema = lines[i + j].Split(':')[1].Trim();
+                //                counter++;
+                //            }
+                //            if (lines[i + j].Split(':')[0].Trim() == "sourcetable")
+                //            {
+                //                sourcetable = lines[i + j].Split(':')[1].Trim();
+                //                counter++;
+                //            }
+                //            if (lines[i + j].Split(':')[0].Trim() == "loadtotarget")
+                //            {
+                //                loadtotarget = bool.Parse(lines[i + j].Split(':')[1].Trim());
+                //                counter++;
+                //            }
+                //            if (lines[i + j].Split(':')[0].Trim() == "sharding")
+                //            {
+                //                sharding = bool.Parse(lines[i + j].Split(':')[1].Trim());
+                //                counter++;
+                //            }
+                //            if (lines[i + j].Split(':')[0].Trim() == "shardmethod")
+                //            {
+                //                shardmethod = lines[i + j].Split(':')[1].Trim();
+                //                counter++;
+                //            }
+                //            if (lines[i + j].Split(':')[0].Trim() == "shardcolumn")
+                //            {
+                //                shardcolumn = lines[i + j].Split(':')[1].Trim();
+                //                counter++;
+                //            }
+                //            if (lines[i + j].Split(':')[0].Trim() == "incremental")
+                //            {
+                //                incremental = bool.Parse(lines[i + j].Split(':')[1].Trim());
+                //                counter++;
+                //            }
+                //            if (lines[i + j].Split(':')[0].Trim() == "incrementalcolumn")
+                //            {
+                //                incrementalcolumn = lines[i + j].Split(':')[1].Trim();
+                //                counter++;
+                //            }
+                //            if (lines[i + j].Split(':')[0].Trim() == "incrementalcolumntype")
+                //            {
+                //                incrementalcolumntype = lines[i + j].Split(':')[1].Trim();
+                //                counter++;
+                //            }
+                //        }
 
-                    }
-                    i = i + counter;
-                    FetchTables ft = new FetchTables(sourcechema, sourcetable, loadtotarget);
-                    ft.Sharding = sharding;
-                    ft.ShardMethod = shardmethod;
-                    ft.ShardColumn = shardcolumn;
-                    ft.Incremental = incremental;
-                    ft.IncrementalColumn = incrementalcolumn;
-                    ft.IncrementalColumnType = incrementalcolumntype;
-                    fetchTables.Add(ft);
-                }
+                //    }
+                    //i = i + counter;
+                    //FetchTables ft = new FetchTables(sourcechema, sourcetable, loadtotarget);
+                    //ft.Sharding = sharding;
+                    //ft.ShardMethod = shardmethod;
+                    //ft.ShardColumn = shardcolumn;
+                    //ft.Incremental = incremental;
+                    //ft.IncrementalColumn = incrementalcolumn;
+                    //ft.IncrementalColumnType = incrementalcolumntype;
+                    //fetchTables.Add(ft);
+                //}
                 
             }
 
@@ -250,67 +255,67 @@ namespace DLT
             sqlCon.Close();
         }
 
-        static void GetCreateTableSql(List<FetchTables> ft)
-        {
-            foreach(FetchTables fetchTable in ft)
-            {
-                fetchTable.CreateTableSql = GetCreateTableSql(fetchTable.SourceSchema, fetchTable.SourceTable, false);
-                fetchTable.CreateTempTableSql = GetCreateTableSql(fetchTable.SourceSchema, fetchTable.SourceTable, true);
-                fetchTable.DropTableSql = "IF OBJECT_ID('" + targetSchema + "." + fetchTable.SourceSchema + "_" + fetchTable.SourceTable + "', 'U') IS NOT NULL   DROP TABLE " + targetSchema + "." + fetchTable.SourceSchema + "_" + fetchTable.SourceTable + ";";
-                fetchTable.SwitchTableSql = "EXEC sp_rename '" + targetSchema + "." + fetchTable.SourceSchema + "_" + fetchTable.SourceTable + "_tmp', '" + fetchTable.SourceSchema + "_" + fetchTable.SourceTable + "';";
-            }
-        }
+        //static void GetCreateTableSql(List<FetchTables> ft)
+        //{
+        //    foreach(FetchTables fetchTable in ft)
+        //    {
+        //        fetchTable.CreateTableSql = GetCreateTableSql(fetchTable.SourceSchema, fetchTable.SourceTable, false);
+        //        fetchTable.CreateTempTableSql = GetCreateTableSql(fetchTable.SourceSchema, fetchTable.SourceTable, true);
+        //        fetchTable.DropTableSql = "IF OBJECT_ID('" + targetSchema + "." + fetchTable.SourceSchema + "_" + fetchTable.SourceTable + "', 'U') IS NOT NULL   DROP TABLE " + targetSchema + "." + fetchTable.SourceSchema + "_" + fetchTable.SourceTable + ";";
+        //        fetchTable.SwitchTableSql = "EXEC sp_rename '" + targetSchema + "." + fetchTable.SourceSchema + "_" + fetchTable.SourceTable + "_tmp', '" + fetchTable.SourceSchema + "_" + fetchTable.SourceTable + "';";
+        //    }
+        //}
         
-        static DataSet GetTableMetaData(string schema, string TableName)
-        {
-            string fetchMetadataSql = sqlServerMetadataFetchTemplate.Replace("%SCHEMANAME%", schema).Replace("%TABLENAME%", TableName);
-            DataSet ds = GetDataSet(sourceConnStr, fetchMetadataSql);
-            return ds;
-        }
+        //static DataSet GetTableMetaData(string schema, string TableName)
+        //{
+        //    string fetchMetadataSql = null;// sqlServerMetadataFetchTemplate.Replace("%SCHEMANAME%", schema).Replace("%TABLENAME%", TableName);
+        //    DataSet ds = GetDataSet(sourceConnStr, fetchMetadataSql);
+        //    return ds;
+        //}
 
-        static string GetCreateTableSql(string schema, string TableName, bool TempTable)
-        {
-            DataSet ds = GetTableMetaData(schema, TableName);
+        //static string GetCreateTableSql(string schema, string TableName, bool TempTable)
+        //{
+        //    DataSet ds = GetTableMetaData(schema, TableName);
 
-            string sql = "CREATE TABLE " + targetSchema + "." + schema + "_" + TableName + (TempTable?"_tmp":"") + " ( " + Environment.NewLine;
+        //    string sql = "CREATE TABLE " + targetSchema + "." + schema + "_" + TableName + (TempTable?"_tmp":"") + " ( " + Environment.NewLine;
 
-            int counter = 0;
-            foreach(DataRow r in ds.Tables[0].Rows)
-            {
-                if (counter++ == 0)
-                    sql += "    ";
-                else
-                    sql += "   ,";
+        //    int counter = 0;
+        //    foreach(DataRow r in ds.Tables[0].Rows)
+        //    {
+        //        if (counter++ == 0)
+        //            sql += "    ";
+        //        else
+        //            sql += "   ,";
 
-                sql += r["col_name"].ToString() + " " + r["datatype"].ToString()  + Environment.NewLine;
-            }
+        //        sql += r["col_name"].ToString() + " " + r["datatype"].ToString()  + Environment.NewLine;
+        //    }
 
-            sql += ")" + Environment.NewLine;
+        //    sql += ")" + Environment.NewLine;
 
-            return sql;
-        }
+        //    return sql;
+        //}
 
-        static public DataSet GetDataSet(string ConnectionString, string SQL)
-        {
-            SqlConnection conn = new SqlConnection(ConnectionString);
-            SqlDataAdapter da = new SqlDataAdapter();
-            SqlCommand cmd = conn.CreateCommand();
-            cmd.CommandText = SQL;
-            da.SelectCommand = cmd;
-            DataSet ds = new DataSet();
-            try
-            {
-                conn.Open();
-                da.Fill(ds);
-                conn.Close();
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine(ex.Message);
-            }
+        //static public DataSet GetDataSet(string ConnectionString, string SQL)
+        //{
+        //    SqlConnection conn = new SqlConnection(ConnectionString);
+        //    SqlDataAdapter da = new SqlDataAdapter();
+        //    SqlCommand cmd = conn.CreateCommand();
+        //    cmd.CommandText = SQL;
+        //    da.SelectCommand = cmd;
+        //    DataSet ds = new DataSet();
+        //    try
+        //    {
+        //        conn.Open();
+        //        da.Fill(ds);
+        //        conn.Close();
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        Console.WriteLine(ex.Message);
+        //    }
 
-            return ds;
-        }
+        //    return ds;
+        //}
        
         static string ConvertToCSV(DataSet objDataSet)
         {

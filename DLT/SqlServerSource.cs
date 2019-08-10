@@ -219,6 +219,11 @@ namespace DLT
 
         public void SaveShardAsCsv(Shard shard, string csvFolder, string csvSeparator)
         {
+            SaveShardAsCsv(shard, csvFolder, csvSeparator, "Unicode");
+        }
+
+        public void SaveShardAsCsv(Shard shard, string csvFolder, string csvSeparator, string encoding)
+        {
             Console.WriteLine($"Downloading {shard.Name} on thread {Thread.CurrentThread.ManagedThreadId}");
 
             SqlConnection sqlCon = new SqlConnection(this.sqlServerSourceConnStr);
@@ -228,7 +233,16 @@ namespace DLT
             SqlDataReader reader = sqlCmd.ExecuteReader();
 
             string fileName = csvFolder + shard.Name + ".csv";
-            StreamWriter sw = new StreamWriter(fileName, false, Encoding.Unicode);
+            StreamWriter sw = null;
+            if (encoding == "UTF8")
+            {
+                sw = new StreamWriter(fileName, false, Encoding.UTF8);
+            }
+            else
+            {
+                sw =new StreamWriter(fileName, false, Encoding.Unicode);
+            }
+            
             object[] output = new object[reader.FieldCount];
 
             for (int i = 0; i < reader.FieldCount; i++)

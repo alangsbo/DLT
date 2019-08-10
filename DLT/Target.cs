@@ -91,27 +91,10 @@ namespace DLT
                 }
             }
         }
-
-        //void SwitchTable(FetchTables ft)
-        //{
-        //    try
-        //    {
-        //        // DataAccess.ExecSqlNonQuery("EXEC sp_rename '" + targetSchema + "." + ft.SourceSchema + "_" + ft.SourceTable + "', '" + ft.SourceSchema + "_" + ft.SourceTable + "_old';", targetConnStr);
-        //        string deleteSql = "IF OBJECT_ID('" + targetSchema + "." + ft.SourceSchema + "_" + ft.SourceTable + "', 'U') IS NOT NULL   DROP TABLE " + targetSchema + "." + ft.SourceSchema + "_" + ft.SourceTable + ";";
-        //        DataAccess.ExecSqlNonQuery(deleteSql, connStr);
-        //    }
-        //    catch (Exception ex)
-        //    { }
-        //    DataAccess.ExecSqlNonQuery("EXEC sp_rename '" + targetSchema + "." + ft.SourceSchema + "_" + ft.SourceTable + "_tmp', '" + ft.SourceSchema + "_" + ft.SourceTable + "';", connStr);
-        //}
+        
 
         bool BulkInsert(Shard shard, bool Incremental, bool OracleSpool)
         {
-
-            //string truncatesql = "TRUNCATE TABLE " + targetSchema + "." + sourceSchema + "_" + sourceTable;
-
-            //DataAccess.ExecSqlNonQuery(truncatesql, targetConnStr);
-
             string bulkinsertsql = "bulk insert " + targetSchema + "." + shard.TableName + (Incremental?" ": "_tmp ") +
                                     "from '" + csvFolder + shard.TableName + "\\" + shard.Name + ".csv' " +
                                     "with( " +
@@ -132,37 +115,5 @@ namespace DLT
             bool r = bool.Parse(TargetDataAccess.GetSingleValue(Sql).ToString());
             return r;
         }
-
-        void CreateTableFromSource(string sourceSchema, string sourceTable, bool replaceTableIfExists, bool tempTable)
-        {
-            //if (!tempTable)
-            //{
-            //    if (replaceTableIfExists)
-            //    {
-            //        string deleteSql = "IF OBJECT_ID('" + targetSchema + "." + sourceSchema + "_" + sourceTable + "', 'U') IS NOT NULL   DROP TABLE " + targetSchema + "." + sourceSchema + "_" + sourceTable + ";";
-            //        DataAccess.ExecSqlNonQuery(deleteSql, connStr);
-            //    }
-            //    Console.WriteLine("Creating table " + targetSchema + "." + sourceSchema + "_" + sourceTable);
-
-            //    string sql = GetCreateTableSql(sourceSchema, sourceTable, false);
-            //    Console.WriteLine(sql);
-            //    DataAccess.ExecSqlNonQuery(sql, connStr);
-            //}
-            //else
-            //{
-            //    string deleteSql = "IF OBJECT_ID('" + targetSchema + "." + sourceSchema + "_" + sourceTable + "_tmp', 'U') IS NOT NULL   DROP TABLE " + targetSchema + "." + sourceSchema + "_" + sourceTable + ";";
-            //    DataAccess.ExecSqlNonQuery(deleteSql, connStr);
-            //    Console.WriteLine("Creating temp table " + targetSchema + "." + sourceSchema + "_" + sourceTable + "_tmp");
-
-            //    string sql = GetCreateTableSql(sourceSchema, sourceTable, true);
-            //    Console.WriteLine(sql);
-            //    DataAccess.ExecSqlNonQuery(sql, connStr);
-            //}
-
-        }
-
-       
-    
-
     }
 }

@@ -30,8 +30,17 @@ namespace DLT
             // If incremental load, data is loaded into table 
 
             // 1. Create temp table
-            if(!ft.Incremental)
+            if (!ft.Incremental) { 
                 TargetDataAccess.ExecSqlNonQuery(ft.CreateTempTableSql);
+            }
+            else
+            {
+                // if incremental, check if target table exists otherwise create it
+                if (!CheckIfTableExists(ft))
+                {
+                    TargetDataAccess.ExecSqlNonQuery(ft.CreateTableSql);
+                }
+            }
 
             // 2. Bulk insert data to temp table
             Parallel.ForEach(ft.Shards, new ParallelOptions { MaxDegreeOfParallelism = MaxThreads/10 }, (shard) =>
@@ -109,6 +118,14 @@ namespace DLT
                                     ")";
             return TargetDataAccess.ExecSqlNonQuery(bulkinsertsql);
 
+        }
+
+        bool CheckIfTableExists(FetchTables ft)
+        {
+
+            string Sql = "select case when OBJECT_ID('" + targetSchema + "." + ft.SourceSchema + "_" + ft.SourceTable + "', 'U') is not null then 'true' else 'false' end";
+            bool r = bool.Parse(TargetDataAccess.GetSingleValue(Sql).ToString());
+            return r;
         }
 
         void CreateTableFromSource(string sourceSchema, string sourceTable, bool replaceTableIfExists, bool tempTable)

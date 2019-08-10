@@ -79,7 +79,7 @@ namespace DLT
                 catch (Exception ex) { }
             }
 
-            Target t = new Target(targetConnStr, targetSchema, csvFolder, csvSeparator, ft);
+           Target t = new Target(targetConnStr, targetSchema, csvFolder, csvSeparator, ft);
             t.LoadTablesToTarget(paralellExection, maxThreads);
 
             Console.WriteLine("Done...");

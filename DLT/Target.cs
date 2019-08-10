@@ -24,7 +24,7 @@ namespace DLT
             this.csvSeparator = CsvSeparator;
         }
 
-        void BulkInsert(FetchTables ft, bool ParallelExecution, int MaxThreads)
+        void BulkInsert(FetchTables ft, bool ParallelExecution, int MaxThreads, bool OracleSpool)
         {
             // If table is not incrementally loaded, all data is loaded to a temp table which is then switched
             // If incremental load, data is loaded into table 
@@ -47,7 +47,7 @@ namespace DLT
             //foreach(Shard shard in ft.Shards)
             {
                 Console.WriteLine($"Bulk inserting {shard.Name} on thread {Thread.CurrentThread.ManagedThreadId}");
-                if(BulkInsert(shard, ft.Incremental))
+                if(BulkInsert(shard, ft.Incremental, OracleSpool))
                 {
                     FetchTables.NumShardsInsertedSuccessfully++;
                 }
@@ -69,20 +69,25 @@ namespace DLT
 
         public void LoadTablesToTarget(bool paralellExection, int maxThreads)
         {
+            LoadTablesToTarget(paralellExection, maxThreads, false);
+        }
+
+        public void LoadTablesToTarget(bool paralellExection, int maxThreads, bool OracleSpool)
+        {
             if (paralellExection)
             {
 
                 Parallel.ForEach(fetchTables, new ParallelOptions { MaxDegreeOfParallelism = maxThreads/10 }, (ft) =>
                 {
                     Console.WriteLine($"Bulk inserting {ft.SourceTable} on thread {Thread.CurrentThread.ManagedThreadId}");
-                    BulkInsert(ft, paralellExection, maxThreads);
+                    BulkInsert(ft, paralellExection, maxThreads, OracleSpool);
                 });
             }
             else
             {
                 foreach (FetchTables f in fetchTables)
                 {
-                    BulkInsert(f, paralellExection, maxThreads);
+                    BulkInsert(f, paralellExection, maxThreads, OracleSpool);
                 }
             }
         }
@@ -100,7 +105,7 @@ namespace DLT
         //    DataAccess.ExecSqlNonQuery("EXEC sp_rename '" + targetSchema + "." + ft.SourceSchema + "_" + ft.SourceTable + "_tmp', '" + ft.SourceSchema + "_" + ft.SourceTable + "';", connStr);
         //}
 
-        bool BulkInsert(Shard shard, bool Incremental)
+        bool BulkInsert(Shard shard, bool Incremental, bool OracleSpool)
         {
 
             //string truncatesql = "TRUNCATE TABLE " + targetSchema + "." + sourceSchema + "_" + sourceTable;
@@ -108,13 +113,13 @@ namespace DLT
             //DataAccess.ExecSqlNonQuery(truncatesql, targetConnStr);
 
             string bulkinsertsql = "bulk insert " + targetSchema + "." + shard.TableName + (Incremental?" ": "_tmp ") +
-                                    "from '" + csvFolder + shard.Name + ".csv' " +
+                                    "from '" + csvFolder + shard.TableName + "\\" + shard.Name + ".csv' " +
                                     "with( " +
                                      "   format = 'csv', " +
                                      "   fieldterminator='" + csvSeparator + "'," +
-                                     "   firstrow = 2, " +
-                                     "   fieldquote = '\"', " +
-                                     "   codepage = '65001' " +
+                                     "   codepage = '"+ (OracleSpool ? "1252" : "65001") + "' " +
+                                     (OracleSpool?"":",   firstrow = 2, ") +
+                                     (OracleSpool ?"":",   fieldquote = '\"'")+
                                     ")";
             return TargetDataAccess.ExecSqlNonQuery(bulkinsertsql);
 

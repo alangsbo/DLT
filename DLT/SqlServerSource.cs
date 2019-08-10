@@ -232,7 +232,7 @@ namespace DLT
             SqlCommand sqlCmd = new SqlCommand(shard.Sql, sqlCon);
             SqlDataReader reader = sqlCmd.ExecuteReader();
 
-            string fileName = csvFolder + shard.Name + ".csv";
+            string fileName = csvFolder + shard.TableName + "\\" + shard.Name + ".csv";
             StreamWriter sw = null;
             if (encoding == "UTF8")
             {

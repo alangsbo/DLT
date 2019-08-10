@@ -10,10 +10,10 @@ using System.Threading;
 
 namespace DLT
 {
-    class OracleSource
+    public class OracleSource
     {
-        string oracleSourceMetadataFetchTemplate = "";
-        string oracleSourceConnectionString = "";
+        public string oracleSourceMetadataFetchTemplate = "";
+        public string oracleSourceConnectionString = "";
 
         public OracleSource(string SqlServerSourceConnectionString)
         {
@@ -232,7 +232,7 @@ namespace DLT
             OracleCommand cmd = new OracleCommand(shard.Sql, oraCon);
             OracleDataReader reader = cmd.ExecuteReader();
 
-            string fileName = csvFolder + shard.Name + ".csv";
+            string fileName = csvFolder + shard.TableName + "\\" + shard.Name + ".csv";
             StreamWriter sw = null;
             if (encoding == "UTF8")
             {

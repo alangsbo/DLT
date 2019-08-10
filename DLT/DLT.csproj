@@ -46,6 +46,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="OracleSpoolSource.cs" />
     <Compile Include="OracleSource.cs" />
     <Compile Include="SqlServerSource.cs" />
     <Compile Include="TargetDataAccess.cs" />

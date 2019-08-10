@@ -40,9 +40,12 @@ namespace DLT
             //SqlServerSource sqlSource = new SqlServerSource(sourceConnStr);
             //List<FetchTables> ft = sqlSource.LoadTablesFromConfig();
 
-            OracleSource oraSource = new OracleSource(sourceConnStr);
+            //OracleSource oraSource = new OracleSource(sourceConnStr);
+            //List<FetchTables> ft = oraSource.LoadTablesFromConfig(testRowLimit);
+
+            OracleSpoolSource oraSource = new OracleSpoolSource(sourceConnStr);
             List<FetchTables> ft = oraSource.LoadTablesFromConfig(testRowLimit);
-            
+
 
             //GetCreateTableSql(fetchTables);
 
@@ -62,10 +65,10 @@ namespace DLT
             }
 
            Target t = new Target(targetConnStr, targetSchema, csvFolder, csvSeparator, ft);
-            t.LoadTablesToTarget(paralellExection, maxThreads);
+            t.LoadTablesToTarget(paralellExection, maxThreads, true);
 
             Console.WriteLine("Done...");
-            Console.ReadLine();
+            //Console.ReadLine();
         }
 
         static void LoadConfig()

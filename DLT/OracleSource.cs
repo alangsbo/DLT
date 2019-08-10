@@ -23,6 +23,11 @@ namespace DLT
 
         public List<FetchTables> LoadTablesFromConfig()
         {
+            return LoadTablesFromConfig(-1);
+        }
+
+        public List<FetchTables> LoadTablesFromConfig(int MaxRowLimit)
+        {
             List<FetchTables> fetchTables = new List<FetchTables>();
 
             string[] lines = File.ReadAllLines("Config.txt");
@@ -96,6 +101,7 @@ namespace DLT
                     ft.Incremental = incremental;
                     ft.IncrementalColumn = incrementalcolumn;
                     ft.IncrementalColumnType = incrementalcolumntype;
+                    ft.LimitRowsForTest = MaxRowLimit;
                     fetchTables.Add(ft);
                 }
             }

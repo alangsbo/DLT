@@ -29,6 +29,7 @@ namespace DLT
         static string targetSchema = "";
         static bool paralellExection = false;
         static int maxThreads = -1;
+        static int testRowLimit = -1;
 
         static string csvFolder = "";
 
@@ -40,7 +41,8 @@ namespace DLT
             //List<FetchTables> ft = sqlSource.LoadTablesFromConfig();
 
             OracleSource oraSource = new OracleSource(sourceConnStr);
-            List<FetchTables> ft = oraSource.LoadTablesFromConfig();
+            List<FetchTables> ft = oraSource.LoadTablesFromConfig(testRowLimit);
+            
 
             //GetCreateTableSql(fetchTables);
 
@@ -98,6 +100,8 @@ namespace DLT
                     skipCsv = bool.Parse(line.Split(':')[1].Trim());
                 if (line.Split(':')[0] == "maxthreads")
                     maxThreads = int.Parse(line.Split(':')[1].Trim());
+                if (line.Split(':')[0] == "limitrowsfortest")
+                    testRowLimit = int.Parse(line.Split(':')[1].Trim());
                 if (line.Split(": ".ToCharArray())[0].ToString() == "csvfolder")
                 {
                     csvFolder = line.Split(": ".ToCharArray(), 2)[1].ToString().Trim();

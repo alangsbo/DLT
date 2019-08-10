@@ -23,6 +23,11 @@ namespace DLT
 
         public List<FetchTables> LoadTablesFromConfig()
         {
+            return LoadTablesFromConfig(-1);
+        }
+
+        public List<FetchTables> LoadTablesFromConfig(int MaxRowLimit)
+        {
             List<FetchTables> fetchTables = new List<FetchTables>();
 
             string[] lines = File.ReadAllLines("Config.txt");
@@ -41,10 +46,10 @@ namespace DLT
                 string line = linesWithoutComments[i];
                 if (line.Split(':')[0] == "fetchtable")
                 {
-                    string sourcechema = "", sourcetable = "", shardmethod = "", shardcolumn = "", incrementalcolumn = "", incrementalcolumntype = "";
+                    string sourcechema = "", sourcetable = "", shardmethod = "", shardcolumn = "", incrementalcolumn = "", incrementalcolumntype = "", where="";
                     bool loadtotarget = false, sharding = false, incremental = false;
                     int counter = 0;
-                    for (int j = 1; j <= 9; j++)
+                    for (int j = 1; j <= 10; j++)
                     {
                         if (i + j < linesWithoutComments.Count)
                         {
@@ -94,6 +99,11 @@ namespace DLT
                                 incrementalcolumntype = linesWithoutComments[i + j].Split(':')[1].Trim();
                                 counter++;
                             }
+                            if (linesWithoutComments[i + j].Split(':')[0].Trim() == "where")
+                            {
+                                where = linesWithoutComments[i + j].Split(':')[1].Trim();
+                                counter++;
+                            }
                             if (linesWithoutComments[i + j].Split(':')[0].Trim() == "fetchtable")
                             {
                                 break;
@@ -109,6 +119,8 @@ namespace DLT
                     ft.Incremental = incremental;
                     ft.IncrementalColumn = incrementalcolumn;
                     ft.IncrementalColumnType = incrementalcolumntype;
+                    ft.Where = where;
+                    ft.LimitRowsForTest = MaxRowLimit;
                     fetchTables.Add(ft);
                 }
             }

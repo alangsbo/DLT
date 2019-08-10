@@ -102,7 +102,7 @@ namespace DLT
 
                     }
                     i = i + counter;
-                    FetchTables ft = new FetchTables(sourcechema, sourcetable, loadtotarget);
+                    FetchTables ft = new FetchTables(sourcechema, sourcetable, loadtotarget, "SqlServer");
                     ft.Sharding = sharding;
                     ft.ShardMethod = shardmethod;
                     ft.ShardColumn = shardcolumn;

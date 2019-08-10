@@ -23,6 +23,7 @@ namespace DLT
         public string IncrementalColumn = "";
         public string IncrementalColumnType = "";
         public static int NumShardsInsertedSuccessfully = 0;
+        public string DatabaseType = "";
 
         public bool AllShardsBulkInsertedSuccessfully
         {
@@ -41,11 +42,12 @@ namespace DLT
         }
 
 
-        public FetchTables(string SourceSchema, string SourceTable, bool LoadToTarget)
+        public FetchTables(string SourceSchema, string SourceTable, bool LoadToTarget,string DatabaseType)
         {
             this.SourceSchema = SourceSchema;
             this.SourceTable = SourceTable;
             this.LoadToTarget = LoadToTarget;
+            this.DatabaseType = DatabaseType;
         }
 
         public FetchTables(string SourceSchema, string SourceTable)
@@ -87,7 +89,15 @@ namespace DLT
                         case "rightbase10":
                             for (int i = 0; i < 10; i++)
                             {
-                                Shard s = new Shard("SELECT top 100 * FROM " + this.SourceSchema + "." + this.SourceTable + " WHERE RIGHT(CAST(" + this.ShardColumn + " as VARCHAR), 1) ='" + i.ToString() + "'" + (this.Incremental?" AND "+incrWhere:""), this.SourceSchema + "_" + this.SourceTable + "_" + i.ToString(), this.SourceSchema + "_" + this.SourceTable);
+                                Shard s = null;
+                                if (this.DatabaseType == "SqlServer")
+                                { 
+                                    s = new Shard("SELECT top 100 * FROM " + this.SourceSchema + "." + this.SourceTable + " WHERE RIGHT(CAST(" + this.ShardColumn + " as VARCHAR), 1) ='" + i.ToString() + "'" + (this.Incremental?" AND "+incrWhere:""), this.SourceSchema + "_" + this.SourceTable + "_" + i.ToString(), this.SourceSchema + "_" + this.SourceTable);
+
+                                } else if(this.DatabaseType == "Oracle") { 
+                                    s = new Shard("SELECT * FROM " + this.SourceSchema + "." + this.SourceTable + " WHERE SUBSTR(cast(" + ShardColumn + " AS varchar(15)),-1,1) ='" + i.ToString() + "'" + (this.Incremental ? " AND " + incrWhere : "") + " FETCH FIRST 20000 ROWS ONLY", this.SourceSchema + "_" + this.SourceTable + "_" + i.ToString(), this.SourceSchema + "_" + this.SourceTable);
+
+                                }
                                 shards.Add(s);
                             }
                             break;

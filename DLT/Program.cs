@@ -36,18 +36,19 @@ namespace DLT
         {
 
             LoadConfig();
-            SqlServerSource sqlSource = new SqlServerSource(sourceConnStr);
-             List<FetchTables> ft = sqlSource.LoadTablesFromConfig();
+            //SqlServerSource sqlSource = new SqlServerSource(sourceConnStr);
+            //List<FetchTables> ft = sqlSource.LoadTablesFromConfig();
 
-            //List<FetchTables> ft = (new OracleSource(sourceConnStr)).LoadTablesFromConfig();
-
+            OracleSource oraSource = new OracleSource(sourceConnStr);
+            List<FetchTables> ft = oraSource.LoadTablesFromConfig();
 
             //GetCreateTableSql(fetchTables);
 
             if (!skipCsv)
             {
                 Log.CsvStartTime = DateTime.Now;
-                sqlSource.ExportTablesAsCsv(ft, paralellExection, maxThreads, csvFolder, csvSeparator);
+                //sqlSource.ExportTablesAsCsv(ft, paralellExection, maxThreads, csvFolder, csvSeparator);
+                oraSource.ExportTablesAsCsv(ft, paralellExection, maxThreads, csvFolder, csvSeparator);
                 Log.CsvEndTime = DateTime.Now;
                 try
                 {
@@ -80,7 +81,7 @@ namespace DLT
             }
 
 
-            for (int i=0;i<linesWithoutComments.Count;i++)
+            for (int i = 0; i < linesWithoutComments.Count; i++)
             {
                 string line = linesWithoutComments[i];
                 if (line.Split(':')[0] == "source")
@@ -100,14 +101,14 @@ namespace DLT
                 if (line.Split(": ".ToCharArray())[0].ToString() == "csvfolder")
                 {
                     csvFolder = line.Split(": ".ToCharArray(), 2)[1].ToString().Trim();
-                    if(csvFolder.ToCharArray()[csvFolder.Length-1] != '\\')
+                    if (csvFolder.ToCharArray()[csvFolder.Length - 1] != '\\')
                         csvFolder += "\\";
                 }
 
-               
-            // Initialie Target Data Acccess
-            TargetDataAccess.TargetConnStr = targetConnStr;
 
+                // Initialie Target Data Acccess
+                TargetDataAccess.TargetConnStr = targetConnStr;
+            }
         }
     }
 }

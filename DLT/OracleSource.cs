@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using System.IO;
 using System.Data;
 using Oracle.DataAccess.Client;
+using System.Threading;
 
 namespace DLT
 {
@@ -88,7 +89,7 @@ namespace DLT
 
                     }
                     i = i + counter;
-                    FetchTables ft = new FetchTables(sourcechema, sourcetable, loadtotarget);
+                    FetchTables ft = new FetchTables(sourcechema, sourcetable, loadtotarget, "Oracle");
                     ft.Sharding = sharding;
                     ft.ShardMethod = shardmethod;
                     ft.ShardColumn = shardcolumn;
@@ -162,6 +163,97 @@ namespace DLT
             }
 
             return ds;
+        }
+
+        public void ExportTablesAsCsv(List<FetchTables> ft, bool parallelExecution, int maxThreads, string CsvFolder, string csvSeparator)
+        {
+            if (parallelExecution)
+            {
+                List<Shard> allShards = new List<Shard>();
+                foreach (FetchTables f in ft)
+                {
+                    foreach (Shard s in f.Shards)
+                    {
+                        allShards.Add(s);
+                    }
+                }
+
+                Parallel.ForEach(allShards, new ParallelOptions { MaxDegreeOfParallelism = maxThreads }, (shard) =>
+                {
+                    SaveShardAsCsv(shard, CsvFolder, csvSeparator);
+                });
+            }
+            else
+            {
+                foreach (FetchTables f in ft)
+                {
+                    SaveTableAsCsv(f, CsvFolder, csvSeparator);
+                }
+            }
+        }
+
+        public void SaveShardAsCsv(Shard shard, string csvFolder, string csvSeparator)
+        {
+            Console.WriteLine($"Downloading {shard.Name} on thread {Thread.CurrentThread.ManagedThreadId}");
+
+            OracleConnection oraCon = new OracleConnection(this.oracleSourceConnectionString);
+            oraCon.Open();
+
+            OracleCommand cmd = new OracleCommand(shard.Sql, oraCon);
+            OracleDataReader reader = cmd.ExecuteReader();
+
+            string fileName = csvFolder + shard.Name + ".csv";
+            StreamWriter sw = new StreamWriter(fileName, false, Encoding.Unicode);
+            object[] output = new object[reader.FieldCount];
+
+            for (int i = 0; i < reader.FieldCount; i++)
+                output[i] = reader.GetName(i);
+
+            sw.WriteLine(string.Join(",", output));
+
+            while (reader.Read())
+            {
+                reader.GetValues(output);
+                string row = "";
+                int counter = 0;
+                foreach (object o in output)
+                {
+                    string val = "";
+                    if (reader.GetDataTypeName(counter) == "varchar" || reader.GetDataTypeName(counter) == "nvarchar")
+                        val = "\"" + o.ToString().Replace("\"", "\"\"") + "\"";
+
+                    else if (o.GetType() == typeof(bool))
+                        val = "\"" + (bool.Parse(o.ToString()) == false ? 0 : 1).ToString() + "\"";
+
+                    else if (reader.GetDataTypeName(counter) == "Double")
+                        val = "\"" + o.ToString().Replace(",", ".") + "\"";
+
+                    else if (o.GetType() == typeof(byte[]))
+                        val = "\"\"";
+                    else
+                        val = "\"" + o.ToString().Replace(",", ".").Replace("\"", "") + "\"";
+
+                    if (counter++ != output.Length - 1)
+                        val += csvSeparator;
+
+                    row += val;
+                }
+                sw.WriteLine(row);
+            }
+
+            sw.Flush();
+            Log.CsvBytesWritten += sw.BaseStream.Length;
+            sw.Close();
+            reader.Close();
+            oraCon.Close();
+        }
+
+        public void SaveTableAsCsv(FetchTables TableToFetch, string CsvFolder, string csvSeparator)
+        {
+            foreach (Shard shard in TableToFetch.Shards)
+            {
+                SaveShardAsCsv(shard, CsvFolder, csvSeparator);
+            }
         }
     }
 }

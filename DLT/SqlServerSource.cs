@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using System.IO;
 using System.Data;
 using System.Data.SqlClient;
+using System.Threading;
 
 namespace DLT
 {
@@ -25,10 +26,19 @@ namespace DLT
             List<FetchTables> fetchTables = new List<FetchTables>();
 
             string[] lines = File.ReadAllLines("Config.txt");
+            List<string> linesWithoutComments = new List<string>();
 
-            for (int i = 0; i < lines.Length; i++)
+            foreach (string line in lines)
             {
-                string line = lines[i];
+                if (line.Length > 2 && line.Substring(0, 2) != "//" && line.Substring(0, 2) != "--")
+                {
+                    linesWithoutComments.Add(line);
+                }
+            }
+
+            for (int i = 0; i < linesWithoutComments.Count; i++)
+            {
+                string line = linesWithoutComments[i];
                 if (line.Split(':')[0] == "fetchtable")
                 {
                     string sourcechema = "", sourcetable = "", shardmethod = "", shardcolumn = "", incrementalcolumn = "", incrementalcolumntype = "";
@@ -36,53 +46,57 @@ namespace DLT
                     int counter = 0;
                     for (int j = 1; j <= 9; j++)
                     {
-                        if (i + j < lines.Length)
+                        if (i + j < linesWithoutComments.Count)
                         {
 
-                            if (lines[i + j].Split(':')[0].Trim() == "sourceschema")
+                            if (linesWithoutComments[i + j].Split(':')[0].Trim() == "sourceschema")
                             {
-                                sourcechema = lines[i + j].Split(':')[1].Trim();
+                                sourcechema = linesWithoutComments[i + j].Split(':')[1].Trim();
                                 counter++;
                             }
-                            if (lines[i + j].Split(':')[0].Trim() == "sourcetable")
+                            if (linesWithoutComments[i + j].Split(':')[0].Trim() == "sourcetable")
                             {
-                                sourcetable = lines[i + j].Split(':')[1].Trim();
+                                sourcetable = linesWithoutComments[i + j].Split(':')[1].Trim();
                                 counter++;
                             }
-                            if (lines[i + j].Split(':')[0].Trim() == "loadtotarget")
+                            if (linesWithoutComments[i + j].Split(':')[0].Trim() == "loadtotarget")
                             {
-                                loadtotarget = bool.Parse(lines[i + j].Split(':')[1].Trim());
+                                loadtotarget = bool.Parse(linesWithoutComments[i + j].Split(':')[1].Trim());
                                 counter++;
                             }
-                            if (lines[i + j].Split(':')[0].Trim() == "sharding")
+                            if (linesWithoutComments[i + j].Split(':')[0].Trim() == "sharding")
                             {
-                                sharding = bool.Parse(lines[i + j].Split(':')[1].Trim());
+                                sharding = bool.Parse(linesWithoutComments[i + j].Split(':')[1].Trim());
                                 counter++;
                             }
-                            if (lines[i + j].Split(':')[0].Trim() == "shardmethod")
+                            if (linesWithoutComments[i + j].Split(':')[0].Trim() == "shardmethod")
                             {
-                                shardmethod = lines[i + j].Split(':')[1].Trim();
+                                shardmethod = linesWithoutComments[i + j].Split(':')[1].Trim();
                                 counter++;
                             }
-                            if (lines[i + j].Split(':')[0].Trim() == "shardcolumn")
+                            if (linesWithoutComments[i + j].Split(':')[0].Trim() == "shardcolumn")
                             {
-                                shardcolumn = lines[i + j].Split(':')[1].Trim();
+                                shardcolumn = linesWithoutComments[i + j].Split(':')[1].Trim();
                                 counter++;
                             }
-                            if (lines[i + j].Split(':')[0].Trim() == "incremental")
+                            if (linesWithoutComments[i + j].Split(':')[0].Trim() == "incremental")
                             {
-                                incremental = bool.Parse(lines[i + j].Split(':')[1].Trim());
+                                incremental = bool.Parse(linesWithoutComments[i + j].Split(':')[1].Trim());
                                 counter++;
                             }
-                            if (lines[i + j].Split(':')[0].Trim() == "incrementalcolumn")
+                            if (linesWithoutComments[i + j].Split(':')[0].Trim() == "incrementalcolumn")
                             {
-                                incrementalcolumn = lines[i + j].Split(':')[1].Trim();
+                                incrementalcolumn = linesWithoutComments[i + j].Split(':')[1].Trim();
                                 counter++;
                             }
-                            if (lines[i + j].Split(':')[0].Trim() == "incrementalcolumntype")
+                            if (linesWithoutComments[i + j].Split(':')[0].Trim() == "incrementalcolumntype")
                             {
-                                incrementalcolumntype = lines[i + j].Split(':')[1].Trim();
+                                incrementalcolumntype = linesWithoutComments[i + j].Split(':')[1].Trim();
                                 counter++;
+                            }
+                            if (linesWithoutComments[i + j].Split(':')[0].Trim() == "fetchtable")
+                            {
+                                break;
                             }
                         }
 
@@ -163,5 +177,97 @@ namespace DLT
 
             return ds;
         }
+
+        public void ExportTablesAsCsv(List<FetchTables> ft, bool parallelExecution, int maxThreads, string CsvFolder, string csvSeparator)
+        {
+            if (parallelExecution)
+            {
+                List<Shard> allShards = new List<Shard>();
+                foreach (FetchTables f in ft)
+                {
+                    foreach (Shard s in f.Shards)
+                    {
+                        allShards.Add(s);
+                    }
+                }
+
+                Parallel.ForEach(allShards, new ParallelOptions { MaxDegreeOfParallelism = maxThreads }, (shard) =>
+                {
+                    SaveShardAsCsv(shard, CsvFolder, csvSeparator);
+                });
+            }
+            else
+            {
+                foreach (FetchTables f in ft)
+                {
+                    SaveTableAsCsv(f, CsvFolder, csvSeparator);
+                }
+            }
+        }
+
+        public void SaveShardAsCsv(Shard shard, string csvFolder, string csvSeparator)
+        {
+            Console.WriteLine($"Downloading {shard.Name} on thread {Thread.CurrentThread.ManagedThreadId}");
+
+            SqlConnection sqlCon = new SqlConnection(this.sqlServerSourceConnStr);
+            sqlCon.Open();
+
+            SqlCommand sqlCmd = new SqlCommand(shard.Sql, sqlCon);
+            SqlDataReader reader = sqlCmd.ExecuteReader();
+
+            string fileName = csvFolder + shard.Name + ".csv";
+            StreamWriter sw = new StreamWriter(fileName, false, Encoding.Unicode);
+            object[] output = new object[reader.FieldCount];
+
+            for (int i = 0; i < reader.FieldCount; i++)
+                output[i] = reader.GetName(i);
+
+            sw.WriteLine(string.Join(",", output));
+
+            while (reader.Read())
+            {
+                reader.GetValues(output);
+                string row = "";
+                int counter = 0;
+                foreach (object o in output)
+                {
+                    string val = "";
+                    if (reader.GetDataTypeName(counter) == "varchar" || reader.GetDataTypeName(counter) == "nvarchar")
+                        val = "\"" + o.ToString().Replace("\"", "\"\"") + "\"";
+
+                    else if (o.GetType() == typeof(bool))
+                        val = "\"" + (bool.Parse(o.ToString()) == false ? 0 : 1).ToString() + "\"";
+
+                    else if (reader.GetDataTypeName(counter) == "decimal")
+                        val = "\"" + o.ToString().Replace(",", ".") + "\"";
+
+                    else if (o.GetType() == typeof(byte[]))
+                        val = "\"\"";
+                    else
+                        val = "\"" + o.ToString() + "\"";
+
+                    if (counter++ != output.Length - 1)
+                        val += csvSeparator;
+
+                    row += val;
+                }
+                sw.WriteLine(row);
+            }
+
+            sw.Flush();
+            Log.CsvBytesWritten += sw.BaseStream.Length;
+            sw.Close();
+            reader.Close();
+            sqlCon.Close();
+        }
+
+        public void SaveTableAsCsv(FetchTables TableToFetch, string CsvFolder, string csvSeparator)
+        {
+            foreach (Shard shard in TableToFetch.Shards)
+            {
+                SaveShardAsCsv(shard, CsvFolder, csvSeparator);
+            }
+        }
     }
+
 }

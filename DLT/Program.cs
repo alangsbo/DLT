@@ -74,10 +74,10 @@ namespace DLT
             }
 
            Target t = new Target(targetConnStr, csvFolder, csvSeparator, ft);
-            t.LoadTablesToTarget(paralellExection, maxThreads, true);
+            t.LoadTablesToTarget(paralellExection, maxThreads, sourceType=="oraclespool");
 
             Console.WriteLine("Done...");
-            //Console.ReadLine();
+            Console.ReadLine();
         }
 
         static void LoadConfig()

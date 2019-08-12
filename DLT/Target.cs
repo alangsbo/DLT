@@ -106,7 +106,7 @@ namespace DLT
                                      "   format = 'csv', " +
                                      "   fieldterminator='" + csvSeparator + "'," +
                                      "   codepage = '"+ (OracleSpool ? "1252" : "65001") + "' " +
-                                     (OracleSpool?"":",   firstrow = 2, ") +
+                                     (OracleSpool?"":",   firstrow = 2 ") +
                                      (OracleSpool ?"":",   fieldquote = '\"'")+
                                     ")";
 

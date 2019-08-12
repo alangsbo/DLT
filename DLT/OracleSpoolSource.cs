@@ -73,6 +73,7 @@ namespace DLT
             sqlFile.WriteLine("set feedback off");
             sqlFile.WriteLine("Set serveroutput off");
             sqlFile.WriteLine("set heading off");
+            sqlFile.WriteLine("set numformat fm999999999999999.99999");
             sqlFile.WriteLine("set arraysize 5000");
             sqlFile.WriteLine("spool " + path + shard.Name + ".csv");
             sqlFile.WriteLine(shard.Sql);

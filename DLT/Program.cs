@@ -27,7 +27,7 @@ namespace DLT
         static string logConnStr = "";
         static string csvSeparator = "";
         static bool skipCsv = false;
-        static string targetSchema = "";
+        //static string targetSchema = "";
         static bool paralellExection = false;
         static int maxThreads = -1;
         static int testRowLimit = -1;
@@ -66,7 +66,7 @@ namespace DLT
                 catch (Exception ex) { }
             }
 
-           Target t = new Target(targetConnStr, targetSchema, csvFolder, csvSeparator, ft);
+           Target t = new Target(targetConnStr, csvFolder, csvSeparator, ft);
             t.LoadTablesToTarget(paralellExection, maxThreads, true);
 
             Console.WriteLine("Done...");
@@ -95,8 +95,8 @@ namespace DLT
                     sourceConnStr = line.Split(':')[1].Trim();
                 if (line.Split(':')[0] == "dest")
                     targetConnStr = line.Split(':')[1].Trim();
-                if (line.Split(':')[0] == "targetschema")
-                    targetSchema = line.Split(':')[1].Trim();
+                //if (line.Split(':')[0] == "targetschema")
+                //    targetSchema = line.Split(':')[1].Trim();
                 if (line.Split(':')[0] == "csvseparator")
                     csvSeparator = line.Split(':')[1].Trim();
                 if (line.Split(':')[0] == "paralellexecution")

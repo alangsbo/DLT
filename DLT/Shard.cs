@@ -11,12 +11,14 @@ namespace DLT
         public string Sql;
         public string Name;
         public string TableName;
+        public string TargetSchema;
         
-        public Shard(string Sql, string Name, string TableName)
+        public Shard(string Sql, string Name, string TableName, string TargetSchema)
         {
             this.Sql = Sql;
             this.Name = Name;
             this.TableName = TableName;
+            this.TargetSchema = TargetSchema;
         }
     }
 }

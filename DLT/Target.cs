@@ -10,15 +10,13 @@ namespace DLT
     public class Target
     {
         string connStr = "";
-        string targetSchema = "";
         string csvFolder = "";
         string csvSeparator = "";
         List<FetchTables> fetchTables;
 
-        public Target(string TargetConnectionString, string TargetSchema, string CsvFolder, string CsvSeparator, List<FetchTables> FetchTables)
+        public Target(string TargetConnectionString, string CsvFolder, string CsvSeparator, List<FetchTables> FetchTables)
         {
             this.connStr = TargetConnectionString;
-            this.targetSchema = TargetSchema;
             this.csvFolder = CsvFolder;
             this.fetchTables = FetchTables;
             this.csvSeparator = CsvSeparator;
@@ -99,7 +97,7 @@ namespace DLT
         {
             string stepid = Guid.NewGuid().ToString();
             Logger.LogStepStart(stepid, shard.Name, "BULK INSERT " + shard.Name);
-            string bulkinsertsql = "bulk insert " + targetSchema + "." + shard.TableName + (Incremental?" ": "_tmp ") +
+            string bulkinsertsql = "bulk insert " + shard.TargetSchema + "." + shard.TableName + (Incremental?" ": "_tmp ") +
                                     "from '" + csvFolder + shard.TableName + "\\" + shard.Name + ".csv' " +
                                     "with( " +
                                      "   format = 'csv', " +
@@ -120,7 +118,7 @@ namespace DLT
         bool CheckIfTableExists(FetchTables ft)
         {
 
-            string Sql = "select case when OBJECT_ID('" + targetSchema + "." + ft.SourceSchema + "_" + ft.SourceTable + "', 'U') is not null then 'true' else 'false' end";
+            string Sql = "select case when OBJECT_ID('" + ft.TargetSchema + "." + ft.SourceSchema + "_" + ft.SourceTable + "', 'U') is not null then 'true' else 'false' end";
             bool r = bool.Parse(TargetDataAccess.GetSingleValue(Sql).ToString());
             return r;
         }
@@ -128,7 +126,7 @@ namespace DLT
         bool CheckIfTempTableExists(FetchTables ft)
         {
 
-            string Sql = "select case when OBJECT_ID('" + targetSchema + "." + ft.SourceSchema + "_" + ft.SourceTable + "_tmp', 'U') is not null then 'true' else 'false' end";
+            string Sql = "select case when OBJECT_ID('" + ft.TargetSchema + "." + ft.SourceSchema + "_" + ft.SourceTable + "_tmp', 'U') is not null then 'true' else 'false' end";
             bool r = bool.Parse(TargetDataAccess.GetSingleValue(Sql).ToString());
             return r;
         }

@@ -15,6 +15,7 @@ namespace DLT
         public bool Sharding = false;
         public string ShardMethod = "";
         public string ShardColumn = "";
+        public string TargetSchema = "";
         public string CreateTableSql = "";
         public string CreateTempTableSql = "";
         public string SwitchTableSql = "";
@@ -45,10 +46,11 @@ namespace DLT
         }
 
 
-        public FetchTables(string SourceSchema, string SourceTable, bool LoadToTarget,string DatabaseType)
+        public FetchTables(string SourceSchema, string SourceTable, string TargetSchema, bool LoadToTarget,string DatabaseType)
         {
             this.SourceSchema = SourceSchema;
             this.SourceTable = SourceTable;
+            this.TargetSchema = TargetSchema;
             this.LoadToTarget = LoadToTarget;
             this.DatabaseType = DatabaseType;
         }
@@ -95,10 +97,10 @@ namespace DLT
                                 Shard s = null;
                                 if (this.DatabaseType == "SqlServer")
                                 { 
-                                    s = new Shard("SELECT " + (LimitRowsForTest != -1 ? " TOP "+LimitRowsForTest+" ": "") + " * FROM " + this.SourceSchema + "." + this.SourceTable + " WHERE RIGHT(CAST(" + this.ShardColumn + " as VARCHAR), 1) ='" + i.ToString() + "'" + (this.Incremental?" AND "+incrWhere:"") + (this.Where!="" ? " AND " + this.Where : ""), this.SourceSchema + "_" + this.SourceTable + "_" + i.ToString(), this.SourceSchema + "_" + this.SourceTable);
+                                    s = new Shard("SELECT " + (LimitRowsForTest != -1 ? " TOP "+LimitRowsForTest+" ": "") + " * FROM " + this.SourceSchema + "." + this.SourceTable + " WHERE RIGHT(CAST(" + this.ShardColumn + " as VARCHAR), 1) ='" + i.ToString() + "'" + (this.Incremental?" AND "+incrWhere:"") + (this.Where!="" ? " AND " + this.Where : ""), this.SourceSchema + "_" + this.SourceTable + "_" + i.ToString(), this.SourceSchema + "_" + this.SourceTable, this.TargetSchema);
 
                                 } else if(this.DatabaseType == "Oracle") { 
-                                    s = new Shard("SELECT * FROM " + this.SourceSchema + "." + this.SourceTable + " WHERE SUBSTR(cast(" + ShardColumn + " AS varchar(15)),-1,1) ='" + i.ToString() + "'" + (this.Incremental ? " AND " + incrWhere : "") + (this.Where != "" ? " AND " + this.Where : "") + (LimitRowsForTest != -1?" FETCH FIRST "+LimitRowsForTest+" ROWS ONLY":""), this.SourceSchema + "_" + this.SourceTable + "_" + i.ToString(), this.SourceSchema + "_" + this.SourceTable);
+                                    s = new Shard("SELECT * FROM " + this.SourceSchema + "." + this.SourceTable + " WHERE SUBSTR(cast(" + ShardColumn + " AS varchar(15)),-1,1) ='" + i.ToString() + "'" + (this.Incremental ? " AND " + incrWhere : "") + (this.Where != "" ? " AND " + this.Where : "") + (LimitRowsForTest != -1?" FETCH FIRST "+LimitRowsForTest+" ROWS ONLY":""), this.SourceSchema + "_" + this.SourceTable + "_" + i.ToString(), this.SourceSchema + "_" + this.SourceTable, this.TargetSchema);
 
                                 }
                                 shards.Add(s);
@@ -108,7 +110,7 @@ namespace DLT
                 }
                 else
                 {
-                    shards.Add(new Shard("SELECT top 100 * FROM " + this.SourceSchema + "." + this.SourceTable, this.SourceSchema + "_" + this.SourceTable, this.SourceSchema + "_" + this.SourceTable + (this.Incremental ? " WHERE " + incrWhere : "")));
+                    shards.Add(new Shard("SELECT top 100 * FROM " + this.SourceSchema + "." + this.SourceTable, this.SourceSchema + "_" + this.SourceTable, this.SourceSchema + "_" + this.SourceTable + (this.Incremental ? " WHERE " + incrWhere : ""), this.TargetSchema));
                 }
 
                 return shards;

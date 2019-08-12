@@ -46,7 +46,7 @@ namespace DLT
                 string line = linesWithoutComments[i];
                 if (line.Split(':')[0] == "fetchtable")
                 {
-                    string sourcechema = "", sourcetable = "", shardmethod = "", shardcolumn = "", incrementalcolumn = "", incrementalcolumntype = "", where="";
+                    string sourcechema = "", sourcetable = "", shardmethod = "", shardcolumn = "", incrementalcolumn = "", incrementalcolumntype = "", where="", targetschema="";
                     bool loadtotarget = false, sharding = false, incremental = false;
                     int counter = 0;
                     for (int j = 1; j <= 10; j++)
@@ -62,6 +62,11 @@ namespace DLT
                             if (linesWithoutComments[i + j].Split(':')[0].Trim() == "sourcetable")
                             {
                                 sourcetable = linesWithoutComments[i + j].Split(':')[1].Trim();
+                                counter++;
+                            }
+                            if (linesWithoutComments[i + j].Split(':')[0].Trim() == "targetschema")
+                            {
+                                targetschema = linesWithoutComments[i + j].Split(':')[1].Trim();
                                 counter++;
                             }
                             if (linesWithoutComments[i + j].Split(':')[0].Trim() == "loadtotarget")
@@ -112,7 +117,7 @@ namespace DLT
 
                     }
                     i = i + counter;
-                    FetchTables ft = new FetchTables(sourcechema, sourcetable, loadtotarget, "SqlServer");
+                    FetchTables ft = new FetchTables(sourcechema, sourcetable, targetschema, loadtotarget, "SqlServer");
                     ft.Sharding = sharding;
                     ft.ShardMethod = shardmethod;
                     ft.ShardColumn = shardcolumn;
@@ -128,11 +133,11 @@ namespace DLT
             // Populate each fetchtable with table creation sql´s by fetching metadata from data source
             foreach (FetchTables fetchTable in fetchTables)
             {
-                fetchTable.CreateTableSql = GetCreateTableSql(fetchTable.SourceSchema, fetchTable.SourceTable, false);
-                fetchTable.CreateTempTableSql = GetCreateTableSql(fetchTable.SourceSchema, fetchTable.SourceTable, true);
-                fetchTable.DropTableSql = "IF OBJECT_ID('" + "dlt" + "." + fetchTable.SourceSchema + "_" + fetchTable.SourceTable + "', 'U') IS NOT NULL   DROP TABLE " + "dlt" + "." + fetchTable.SourceSchema + "_" + fetchTable.SourceTable + ";";
-                fetchTable.DropTempTableSql = "IF OBJECT_ID('" + "dlt" + "." + fetchTable.SourceSchema + "_" + fetchTable.SourceTable + "_tmp', 'U') IS NOT NULL   DROP TABLE " + "dlt" + "." + fetchTable.SourceSchema + "_" + fetchTable.SourceTable + "_tmp;";
-                fetchTable.SwitchTableSql = "EXEC sp_rename '" + "dlt"+ "." + fetchTable.SourceSchema + "_" + fetchTable.SourceTable + "_tmp', '" + fetchTable.SourceSchema + "_" + fetchTable.SourceTable + "';";
+                fetchTable.CreateTableSql = GetCreateTableSql(fetchTable.TargetSchema,fetchTable.SourceSchema, fetchTable.SourceTable, false);
+                fetchTable.CreateTempTableSql = GetCreateTableSql(fetchTable.TargetSchema, fetchTable.SourceSchema, fetchTable.SourceTable, true);
+                fetchTable.DropTableSql = "IF OBJECT_ID('" + fetchTable.TargetSchema + "." + fetchTable.SourceSchema + "_" + fetchTable.SourceTable + "', 'U') IS NOT NULL   DROP TABLE " + fetchTable.TargetSchema + "." + fetchTable.SourceSchema + "_" + fetchTable.SourceTable + ";";
+                fetchTable.DropTempTableSql = "IF OBJECT_ID('" + fetchTable.TargetSchema + "." + fetchTable.SourceSchema + "_" + fetchTable.SourceTable + "_tmp', 'U') IS NOT NULL   DROP TABLE " + fetchTable.TargetSchema + "." + fetchTable.SourceSchema + "_" + fetchTable.SourceTable + "_tmp;";
+                fetchTable.SwitchTableSql = "EXEC sp_rename '" + fetchTable.TargetSchema  + "." + fetchTable.SourceSchema + "_" + fetchTable.SourceTable + "_tmp', '" + fetchTable.SourceSchema + "_" + fetchTable.SourceTable + "';";
             }
 
            
@@ -140,11 +145,11 @@ namespace DLT
             return fetchTables;
         }
 
-        public string GetCreateTableSql(string schema, string TableName, bool TempTable)
+        public string GetCreateTableSql(string targetschema, string schema, string TableName, bool TempTable)
         {
             DataSet ds = GetTableMetaData(schema, TableName);
 
-            string sql = "CREATE TABLE " + "dlt" + "." + schema + "_" + TableName + (TempTable ? "_tmp" : "") + " ( " + Environment.NewLine;
+            string sql = "CREATE TABLE " + targetschema + "." + schema + "_" + TableName + (TempTable ? "_tmp" : "") + " ( " + Environment.NewLine;
 
             int counter = 0;
             foreach (DataRow r in ds.Tables[0].Rows)

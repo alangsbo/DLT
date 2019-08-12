@@ -131,6 +131,7 @@ namespace DLT
                 fetchTable.CreateTableSql = GetCreateTableSql(fetchTable.SourceSchema, fetchTable.SourceTable, false);
                 fetchTable.CreateTempTableSql = GetCreateTableSql(fetchTable.SourceSchema, fetchTable.SourceTable, true);
                 fetchTable.DropTableSql = "IF OBJECT_ID('" + "dlt" + "." + fetchTable.SourceSchema + "_" + fetchTable.SourceTable + "', 'U') IS NOT NULL   DROP TABLE " + "dlt" + "." + fetchTable.SourceSchema + "_" + fetchTable.SourceTable + ";";
+                fetchTable.DropTempTableSql = "IF OBJECT_ID('" + "dlt" + "." + fetchTable.SourceSchema + "_" + fetchTable.SourceTable + "_tmp', 'U') IS NOT NULL   DROP TABLE " + "dlt" + "." + fetchTable.SourceSchema + "_" + fetchTable.SourceTable + "_tmp;";
                 fetchTable.SwitchTableSql = "EXEC sp_rename '" + "dlt"+ "." + fetchTable.SourceSchema + "_" + fetchTable.SourceTable + "_tmp', '" + fetchTable.SourceSchema + "_" + fetchTable.SourceTable + "';";
             }
 
@@ -224,6 +225,9 @@ namespace DLT
 
         public void SaveShardAsCsv(Shard shard, string csvFolder, string csvSeparator, string encoding)
         {
+            string stepid = Guid.NewGuid().ToString();
+            Logger.LogStepStart(stepid, shard.Name, "DOWNLOADING " + shard.Name);
+
             Console.WriteLine($"Downloading {shard.Name} on thread {Thread.CurrentThread.ManagedThreadId}");
 
             SqlConnection sqlCon = new SqlConnection(this.sqlServerSourceConnStr);
@@ -285,6 +289,8 @@ namespace DLT
             sw.Close();
             reader.Close();
             sqlCon.Close();
+
+            Logger.LogStepEnd(stepid);
         }
 
         public void SaveTableAsCsv(FetchTables TableToFetch, string CsvFolder, string csvSeparator)

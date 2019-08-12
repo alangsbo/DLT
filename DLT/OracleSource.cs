@@ -224,6 +224,9 @@ namespace DLT
 
         public void SaveShardAsCsv(Shard shard, string csvFolder, string csvSeparator, string encoding)
         {
+            string stepid = Guid.NewGuid().ToString();
+            Logger.LogStepStart(stepid, shard.Name, "DOWNLOADING " + shard.Name);
+
             Console.WriteLine($"Downloading {shard.Name} on thread {Thread.CurrentThread.ManagedThreadId}");
 
             OracleConnection oraCon = new OracleConnection(this.oracleSourceConnectionString);
@@ -291,6 +294,8 @@ namespace DLT
             sw.Close();
             reader.Close();
             oraCon.Close();
+
+            Logger.LogStepEnd(stepid);
         }
 
         public void SaveTableAsCsv(FetchTables TableToFetch, string CsvFolder, string csvSeparator)

@@ -24,19 +24,21 @@ namespace DLT
     {
         static string sourceConnStr = "";
         static string targetConnStr = "";
+        static string logConnStr = "";
         static string csvSeparator = "";
         static bool skipCsv = false;
         static string targetSchema = "";
         static bool paralellExection = false;
         static int maxThreads = -1;
         static int testRowLimit = -1;
-
+        
         static string csvFolder = "";
 
         static void Main(string[] args)
         {
-
+            
             LoadConfig();
+            Logger.Init(logConnStr);
             //SqlServerSource sqlSource = new SqlServerSource(sourceConnStr);
             //List<FetchTables> ft = sqlSource.LoadTablesFromConfig();
 
@@ -105,6 +107,8 @@ namespace DLT
                     maxThreads = int.Parse(line.Split(':')[1].Trim());
                 if (line.Split(':')[0] == "limitrowsfortest")
                     testRowLimit = int.Parse(line.Split(':')[1].Trim());
+                if (line.Split(':')[0] == "log")
+                    logConnStr = line.Split(':')[1].Trim();
                 if (line.Split(": ".ToCharArray())[0].ToString() == "csvfolder")
                 {
                     csvFolder = line.Split(": ".ToCharArray(), 2)[1].ToString().Trim();

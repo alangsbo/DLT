@@ -19,6 +19,7 @@ namespace DLT
         public string CreateTempTableSql = "";
         public string SwitchTableSql = "";
         public string DropTableSql = "";
+        public string DropTempTableSql = "";
         public bool Incremental = false;
         public string IncrementalColumn = "";
         public string IncrementalColumnType = "";

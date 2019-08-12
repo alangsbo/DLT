@@ -30,7 +30,9 @@ namespace DLT
             // If incremental load, data is loaded into table 
 
             // 1. Create temp table
-            if (!ft.Incremental) { 
+            if (!ft.Incremental)
+            {
+                TargetDataAccess.ExecSqlNonQuery(ft.DropTempTableSql);
                 TargetDataAccess.ExecSqlNonQuery(ft.CreateTempTableSql);
             }
             else
@@ -95,6 +97,8 @@ namespace DLT
 
         bool BulkInsert(Shard shard, bool Incremental, bool OracleSpool)
         {
+            string stepid = Guid.NewGuid().ToString();
+            Logger.LogStepStart(stepid, shard.Name, "BULK INSERT " + shard.Name);
             string bulkinsertsql = "bulk insert " + targetSchema + "." + shard.TableName + (Incremental?" ": "_tmp ") +
                                     "from '" + csvFolder + shard.TableName + "\\" + shard.Name + ".csv' " +
                                     "with( " +
@@ -104,7 +108,12 @@ namespace DLT
                                      (OracleSpool?"":",   firstrow = 2, ") +
                                      (OracleSpool ?"":",   fieldquote = '\"'")+
                                     ")";
-            return TargetDataAccess.ExecSqlNonQuery(bulkinsertsql);
+
+            
+            
+            bool b = TargetDataAccess.ExecSqlNonQuery(bulkinsertsql);
+            Logger.LogStepEnd(stepid);
+            return b;
 
         }
 
@@ -112,6 +121,14 @@ namespace DLT
         {
 
             string Sql = "select case when OBJECT_ID('" + targetSchema + "." + ft.SourceSchema + "_" + ft.SourceTable + "', 'U') is not null then 'true' else 'false' end";
+            bool r = bool.Parse(TargetDataAccess.GetSingleValue(Sql).ToString());
+            return r;
+        }
+
+        bool CheckIfTempTableExists(FetchTables ft)
+        {
+
+            string Sql = "select case when OBJECT_ID('" + targetSchema + "." + ft.SourceSchema + "_" + ft.SourceTable + "_tmp', 'U') is not null then 'true' else 'false' end";
             bool r = bool.Parse(TargetDataAccess.GetSingleValue(Sql).ToString());
             return r;
         }

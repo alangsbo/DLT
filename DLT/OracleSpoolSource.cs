@@ -52,6 +52,9 @@ namespace DLT
 
         public new void SaveShardAsCsv(Shard shard, string csvFolder, string csvSeparator, string encoding)
         {
+            string stepid = Guid.NewGuid().ToString();
+            Logger.LogStepStart(stepid, shard.Name, "DOWNLOADING " + shard.Name);
+
             Console.WriteLine($"Spooling {shard.Name} on thread {Thread.CurrentThread.ManagedThreadId}");
             string path = csvFolder + shard.TableName + "\\";
             Directory.CreateDirectory(path);
@@ -86,6 +89,7 @@ namespace DLT
             var fetchProcess = Process.Start("CMD.exe",cmd);
             Console.WriteLine(cmd);
             fetchProcess.WaitForExit();
+            Logger.LogStepEnd(stepid);
 
         }
 

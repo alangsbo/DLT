@@ -22,6 +22,7 @@ namespace DLT
 
     public class Program
     {
+        static string sourceType = "";
         static string sourceConnStr = "";
         static string targetConnStr = "";
         static string logConnStr = "";
@@ -39,23 +40,29 @@ namespace DLT
             
             LoadConfig();
             Logger.Init(logConnStr);
-            //SqlServerSource sqlSource = new SqlServerSource(sourceConnStr);
-            //List<FetchTables> ft = sqlSource.LoadTablesFromConfig();
 
-            //OracleSource oraSource = new OracleSource(sourceConnStr);
-            //List<FetchTables> ft = oraSource.LoadTablesFromConfig(testRowLimit);
+            List<FetchTables> ft = null;
+            Source source = null;
+            if (sourceType == "sqlserver")
+            {
+                source = new SqlServerSource(sourceConnStr);
+                ft = source.LoadTablesFromConfig(testRowLimit);
+            } else if(sourceType == "oracle")
+            {
+                source = new OracleSource(sourceConnStr);
+                ft = source.LoadTablesFromConfig(testRowLimit);
 
-            OracleSpoolSource oraSource = new OracleSpoolSource(sourceConnStr);
-            List<FetchTables> ft = oraSource.LoadTablesFromConfig(testRowLimit);
-
-
-            //GetCreateTableSql(fetchTables);
+            } else if(sourceType == "oraclespool")
+            {
+                source = new OracleSpoolSource(sourceConnStr);
+                ft = source.LoadTablesFromConfig(testRowLimit);
+            }
 
             if (!skipCsv)
             {
                 Log.CsvStartTime = DateTime.Now;
                 //sqlSource.ExportTablesAsCsv(ft, paralellExection, maxThreads, csvFolder, csvSeparator);
-                oraSource.ExportTablesAsCsv(ft, paralellExection, maxThreads, csvFolder, csvSeparator);
+                source.ExportTablesAsCsv(ft, paralellExection, maxThreads, csvFolder, csvSeparator);
                 Log.CsvEndTime = DateTime.Now;
                 try
                 {
@@ -91,6 +98,8 @@ namespace DLT
             for (int i = 0; i < linesWithoutComments.Count; i++)
             {
                 string line = linesWithoutComments[i];
+                if (line.Split(':')[0] == "sourcetype")
+                    sourceType = line.Split(':')[1].Trim();
                 if (line.Split(':')[0] == "source")
                     sourceConnStr = line.Split(':')[1].Trim();
                 if (line.Split(':')[0] == "dest")

@@ -28,6 +28,7 @@ namespace DLT
         public string DatabaseType = "";
         public int LimitRowsForTest = -1;
         public string Where = "";
+        public bool Nolock = true;
 
         public bool AllShardsBulkInsertedSuccessfully
         {
@@ -97,7 +98,7 @@ namespace DLT
                                 Shard s = null;
                                 if (this.DatabaseType == "SqlServer")
                                 { 
-                                    s = new Shard("SELECT " + (LimitRowsForTest != -1 ? " TOP "+LimitRowsForTest+" ": "") + " * FROM " + this.SourceSchema + "." + this.SourceTable + " WHERE RIGHT(CAST(" + this.ShardColumn + " as VARCHAR), 1) ='" + i.ToString() + "'" + (this.Incremental?" AND "+incrWhere:"") + (this.Where!="" ? " AND " + this.Where : ""), this.SourceSchema + "_" + this.SourceTable + "_" + i.ToString(), this.SourceSchema + "_" + this.SourceTable, this.TargetSchema);
+                                    s = new Shard("SELECT " + (LimitRowsForTest != -1 ? " TOP "+LimitRowsForTest+" ": "") + " * FROM " + this.SourceSchema + "." + this.SourceTable +(Nolock?" WITH (NOLOCK)":"") + " WHERE RIGHT(CAST(" + this.ShardColumn + " as VARCHAR), 1) ='" + i.ToString() + "'" + (this.Incremental?" AND "+incrWhere:"") + (this.Where!="" ? " AND " + this.Where : ""), this.SourceSchema + "_" + this.SourceTable + "_" + i.ToString(), this.SourceSchema + "_" + this.SourceTable, this.TargetSchema);
 
                                 } else if(this.DatabaseType == "Oracle") { 
                                     s = new Shard("SELECT * FROM " + this.SourceSchema + "." + this.SourceTable + " WHERE SUBSTR(cast(" + ShardColumn + " AS varchar(15)),-1,1) ='" + i.ToString() + "'" + (this.Incremental ? " AND " + incrWhere : "") + (this.Where != "" ? " AND " + this.Where : "") + (LimitRowsForTest != -1?" FETCH FIRST "+LimitRowsForTest+" ROWS ONLY":""), this.SourceSchema + "_" + this.SourceTable + "_" + i.ToString(), this.SourceSchema + "_" + this.SourceTable, this.TargetSchema);

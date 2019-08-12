@@ -10,7 +10,7 @@ using System.Threading;
 
 namespace DLT
 {
-    class SqlServerSource
+    class SqlServerSource : Source
     {
         string sqlServerMetadataFetchTemplate = "";
         string sqlServerSourceConnStr = "";
@@ -21,12 +21,12 @@ namespace DLT
             sqlServerSourceConnStr = SqlServerSourceConnectionString;
         }
 
-        public List<FetchTables> LoadTablesFromConfig()
+        public override List<FetchTables> LoadTablesFromConfig()
         {
             return LoadTablesFromConfig(-1);
         }
 
-        public List<FetchTables> LoadTablesFromConfig(int MaxRowLimit)
+        public override List<FetchTables> LoadTablesFromConfig(int MaxRowLimit)
         {
             List<FetchTables> fetchTables = new List<FetchTables>();
 
@@ -117,6 +117,8 @@ namespace DLT
 
                     }
                     i = i + counter;
+                    // if no targetschema is set set dlt as default
+                    if (targetschema== "") targetschema = "dlt";
                     FetchTables ft = new FetchTables(sourcechema, sourcetable, targetschema, loadtotarget, "SqlServer");
                     ft.Sharding = sharding;
                     ft.ShardMethod = shardmethod;
@@ -196,7 +198,7 @@ namespace DLT
             return ds;
         }
 
-        public void ExportTablesAsCsv(List<FetchTables> ft, bool parallelExecution, int maxThreads, string CsvFolder, string csvSeparator)
+        public override void ExportTablesAsCsv(List<FetchTables> ft, bool parallelExecution, int maxThreads, string CsvFolder, string csvSeparator)
         {
             if (parallelExecution)
             {
@@ -241,7 +243,11 @@ namespace DLT
             SqlCommand sqlCmd = new SqlCommand(shard.Sql, sqlCon);
             SqlDataReader reader = sqlCmd.ExecuteReader();
 
-            string fileName = csvFolder + shard.TableName + "\\" + shard.Name + ".csv";
+            
+            string path = csvFolder + shard.TableName + "\\";
+            string fileName = path + "\\" + shard.Name + ".csv";
+            Directory.CreateDirectory(path);
+
             StreamWriter sw = null;
             if (encoding == "UTF8")
             {

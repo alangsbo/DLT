@@ -49,6 +49,7 @@
     <Compile Include="Logger.cs" />
     <Compile Include="OracleSpoolSource.cs" />
     <Compile Include="OracleSource.cs" />
+    <Compile Include="Source.cs" />
     <Compile Include="SqlServerSource.cs" />
     <Compile Include="TargetDataAccess.cs" />
     <Compile Include="FetchTables.cs" />

@@ -27,6 +27,9 @@ namespace DLT
             // If table is not incrementally loaded, all data is loaded to a temp table which is then switched
             // If incremental load, data is loaded into table 
 
+            // create target schema if not exists
+            TargetDataAccess.ExecSqlNonQuery("IF NOT EXISTS (SELECT * FROM sys.schemas WHERE name = '"+ft.TargetSchema+ "') BEGIN EXEC('CREATE SCHEMA " + ft.TargetSchema + "') END");
+
             // 1. Create temp table
             if (!ft.Incremental)
             {

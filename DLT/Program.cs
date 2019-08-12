@@ -28,6 +28,7 @@ namespace DLT
         static string logConnStr = "";
         static string csvSeparator = "";
         static bool skipCsv = false;
+        static bool skipInsert = false;
         //static string targetSchema = "";
         static bool paralellExection = false;
         static int maxThreads = -1;
@@ -73,8 +74,12 @@ namespace DLT
                 catch (Exception ex) { }
             }
 
-           Target t = new Target(targetConnStr, csvFolder, csvSeparator, ft);
-            t.LoadTablesToTarget(paralellExection, maxThreads, sourceType=="oraclespool");
+            if (!skipInsert)
+            {
+                Target t = new Target(targetConnStr, csvFolder, csvSeparator, ft);
+                t.LoadTablesToTarget(paralellExection, maxThreads, sourceType == "oraclespool");
+            }
+           
 
             Console.WriteLine("Done...");
             Console.ReadLine();
@@ -112,6 +117,8 @@ namespace DLT
                     paralellExection = bool.Parse(line.Split(':')[1].Trim());
                 if (line.Split(':')[0] == "skipcsv")
                     skipCsv = bool.Parse(line.Split(':')[1].Trim());
+                if (line.Split(':')[0] == "skipinsert")
+                    skipInsert = bool.Parse(line.Split(':')[1].Trim());
                 if (line.Split(':')[0] == "maxthreads")
                     maxThreads = int.Parse(line.Split(':')[1].Trim());
                 if (line.Split(':')[0] == "limitrowsfortest")

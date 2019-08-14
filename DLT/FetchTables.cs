@@ -111,7 +111,7 @@ namespace DLT
                 }
                 else
                 {
-                    shards.Add(new Shard("SELECT top 100 * FROM " + this.SourceSchema + "." + this.SourceTable, this.SourceSchema + "_" + this.SourceTable, this.SourceSchema + "_" + this.SourceTable + (this.Incremental ? " WHERE " + incrWhere : ""), this.TargetSchema));
+                    shards.Add(new Shard("SELECT " + (LimitRowsForTest != -1 ? " TOP " + LimitRowsForTest + " " : "") + " * FROM " + this.SourceSchema + "." + this.SourceTable, this.SourceSchema + "_" + this.SourceTable, this.SourceSchema + "_" + this.SourceTable + (this.Incremental ? " WHERE " + incrWhere : ""), this.TargetSchema));
                 }
 
                 return shards;

@@ -82,7 +82,7 @@ namespace DLT
            
 
             Console.WriteLine("Done...");
-            Console.ReadLine();
+
         }
 
         static void LoadConfig()

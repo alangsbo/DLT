@@ -5,7 +5,7 @@ b.Name as col_name,
 c.name + 
 case 
 	when c.name like '%char%' then '('+cast(case when b.max_length=-1 then 'max' else cast(b.max_length as varchar) end as varchar)+')'
-	when c.name like '%numeric%' then '('+cast(b.max_length as varchar)+',' + cast(b.precision as varchar)+ ')'
+	when c.name like '%numeric%' then '('+cast(b.precision as varchar)+',' + cast(b.scale as varchar)+ ')'
 	else ''
 end + ' ' +
 case

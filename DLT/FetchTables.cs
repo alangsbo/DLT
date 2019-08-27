@@ -24,7 +24,7 @@ namespace DLT
         public bool Incremental = false;
         public string IncrementalColumn = "";
         public string IncrementalColumnType = "";
-        public static int NumShardsInsertedSuccessfully = 0;
+        public int NumShardsInsertedSuccessfully = 0;
         public string DatabaseType = "";
         public int LimitRowsForTest = -1;
         public string Where = "";

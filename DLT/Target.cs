@@ -52,7 +52,7 @@ namespace DLT
                 Console.WriteLine($"Bulk inserting {shard.Name} on thread {Thread.CurrentThread.ManagedThreadId}");
                 if(BulkInsert(shard, ft.Incremental, OracleSpool))
                 {
-                    FetchTables.NumShardsInsertedSuccessfully++;
+                    ft.NumShardsInsertedSuccessfully++;
                 }
             }
             );
